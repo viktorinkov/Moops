@@ -242,6 +242,13 @@ test("known assets are stable PNGs and unknown assets return 404", async () => {
   );
   assert.deepEqual(first.body, second.body);
   assert.deepEqual([...first.body.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.ok(first.body.length > 100_000, "catalog images must be visible fixtures, not 1px placeholders");
+
+  const pizza = await request(
+    "/assets/c9901f01-1efe-4dfb-8262-43a5151a6988",
+  );
+  assert.equal(pizza.response.status, 200);
+  assert.notDeepEqual(first.body, pizza.body);
 
   const missing = await request("/assets/not-a-fixture-asset");
   assert.equal(missing.response.status, 404);

@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 import {
@@ -10,11 +11,31 @@ import {
   FIXTURE_NAME,
   FOODS,
   LOGIN_CREDENTIALS,
-  PLACEHOLDER_PNG,
   RESTAURANTS,
   TESTIMONIALS,
   USER,
 } from "./fixtures.mjs";
+
+const ASSET_FIXTURES = new Map([
+  ["fc3923bf-f6b8-474b-b7d2-4c3d471f6b81", "mcdonald.imageset/mcdonald.png"],
+  ["66bac81a-ed54-4696-8351-ba249c7785fa", "restaurant_page.imageset/restaurant_page.png"],
+  ["de90ec31-7f59-4190-80af-637f5d2b1e45", "wendy.imageset/wendy.png"],
+  ["bee85be3-0fd5-4e0e-939b-c7bb8b7ed496", "pizza_hut.imageset/pizza_hut.png"],
+  ["c036980b-67ec-43be-a3ec-2c78affa6ea3", "cheese.imageset/cheese.png"],
+  ["effa78ee-6710-418a-bae4-309e6e191ae8", "chicken_sandwich.imageset/chicken_sandwich.png"],
+  ["c9901f01-1efe-4dfb-8262-43a5151a6988", "pizza.imageset/pizza.png"],
+  ["ab50407e-33ee-4dda-b22b-b79b3ec6b23a", "salad.imageset/salad.png"],
+  ["4e0d45c7-a84f-4eed-b3e1-6580f7ef7c6d", "dessert.imageset/dessert.png"],
+  ["1f40cdea-479b-43f0-b409-2738a64bbdb6", "meat.imageset/meat.png"],
+  ["9b2f894f-6c4e-44fe-a608-1005a2d85eff", "fruits.imageset/fruits.png"],
+  ["eec78d0c-3d3a-4801-829a-60f73641e693", "person_testimonial.imageset/person_testimonial.png"],
+  ["0bcd5e8a-677a-4071-a927-aaa3c5676093", "testimonial1.imageset/testimonial1.png"],
+  ["f126d44a-41cb-493b-a5dc-5e47f61ff00d", "testimonial2.imageset/testimonial2.png"],
+  ["a7895ea8-0b6f-40b0-9dba-0a48b129336c", "testimonial3.imageset/testimonial3.png"],
+].map(([assetID, file]) => [
+  assetID,
+  new URL(`../FoodDelivery/Food Delivery/Assets.xcassets/Images/${file}`, import.meta.url),
+]));
 
 const JSON_LIMIT_BYTES = 64 * 1024;
 const DELIVERY_PREFERENCES = new Set(["Leave at door", "Meet at door"]);
@@ -167,7 +188,11 @@ async function handleRequest(request, response, state) {
     if (!ASSET_IDS.includes(assetID)) {
       throw new RequestError(404, "Asset not found.", "NOT_FOUND");
     }
-    sendBytes(response, 200, PLACEHOLDER_PNG, "image/png");
+    const assetURL = ASSET_FIXTURES.get(assetID);
+    if (!assetURL) {
+      throw new RequestError(404, "Asset fixture not found.", "NOT_FOUND");
+    }
+    sendBytes(response, 200, await readFile(assetURL), "image/png");
     return;
   }
 
