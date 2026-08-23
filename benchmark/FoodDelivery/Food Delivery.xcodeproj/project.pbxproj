@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A20000000000000000000003 /* BenchmarkRunContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* BenchmarkRunContext.swift */; };
+		A20000000000000000000004 /* BenchmarkHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* BenchmarkHUDView.swift */; };
 		B628671C2AD2FFEB000296C1 /* Order.swift in Sources */ = {isa = PBXBuildFile; fileRef = B628671B2AD2FFEB000296C1 /* Order.swift */; };
 		B62867202AD3FCE6000296C1 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B628671F2AD3FCE6000296C1 /* ForgotPasswordView.swift */; };
 		B62867232AD3FE6C000296C1 /* OtpModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B62867222AD3FE6C000296C1 /* OtpModifier.swift */; };
@@ -148,6 +150,8 @@
 /* Begin PBXFileReference section */
 		A10000000000000000000002 /* BenchmarkFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkFlowUITests.swift; sourceTree = "<group>"; };
 		A10000000000000000000003 /* FoodDeliveryBenchmarkUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FoodDeliveryBenchmarkUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000001 /* BenchmarkRunContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkRunContext.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* BenchmarkHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkHUDView.swift; sourceTree = "<group>"; };
 		B628671B2AD2FFEB000296C1 /* Order.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Order.swift; sourceTree = "<group>"; };
 		B628671F2AD3FCE6000296C1 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		B62867222AD3FE6C000296C1 /* OtpModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtpModifier.swift; sourceTree = "<group>"; };
@@ -813,6 +817,8 @@
 		B6E912E32AB4749D002B4B1C /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000001 /* BenchmarkRunContext.swift */,
+				A20000000000000000000002 /* BenchmarkHUDView.swift */,
 				B67EF6982AC346920072B3D4 /* TabIcon.swift */,
 				B67EF6BD2ACEA3620072B3D4 /* BaseViewModel.swift */,
 				B62867302AD4699E000296C1 /* Destination.swift */,
@@ -1013,6 +1019,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A20000000000000000000003 /* BenchmarkRunContext.swift in Sources */,
+				A20000000000000000000004 /* BenchmarkHUDView.swift in Sources */,
 				B67E353E2ADE936000743128 /* IsName.swift in Sources */,
 				B67EF6D12AD052FF0072B3D4 /* FoodUseCase.swift in Sources */,
 				B67EF6992AC346920072B3D4 /* TabIcon.swift in Sources */,

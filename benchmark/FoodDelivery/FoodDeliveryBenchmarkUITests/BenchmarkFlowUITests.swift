@@ -59,9 +59,27 @@ final class BenchmarkFlowUITests: XCTestCase {
         XCTAssertTrue(confirmation.waitForExistence(timeout: 5), "Order confirmation did not appear.")
         confirmation.buttons["Yes"].tap()
 
+        let verificationScreen = element(identifier: "verification.screen")
         XCTAssertTrue(
-            app.alerts["Success"].waitForExistence(timeout: 15),
-            "The real order request did not complete successfully."
+            verificationScreen.waitForExistence(timeout: 15),
+            "The real order request did not reach the in-app verification result."
+        )
+
+        let verificationStatus = element(identifier: "verification.status")
+        XCTAssertTrue(verificationStatus.waitForExistence(timeout: 2))
+        XCTAssertTrue(
+            verificationStatus.label.localizedCaseInsensitiveContains("FEATURE VERIFIED"),
+            "The final app screen does not visibly report feature verification."
+        )
+
+        let expectedArmLabel = ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_ARM_LABEL"]
+            ?? "CODEX + UITEST"
+        let verificationArm = element(identifier: "verification.arm")
+        XCTAssertTrue(verificationArm.waitForExistence(timeout: 2))
+        XCTAssertEqual(
+            verificationArm.label,
+            expectedArmLabel,
+            "The final app screen does not identify the benchmark setup."
         )
 
         let receipt = try fetchLastOrderReceipt()
@@ -75,6 +93,15 @@ final class BenchmarkFlowUITests: XCTestCase {
     private func launchAndRestoreToCheckout() {
         if ProcessInfo.processInfo.environment["MOOPS_ENABLE_INJECTIONIII"] == "1" {
             app.launchEnvironment["MOOPS_ENABLE_INJECTIONIII"] = "1"
+        }
+        app.launchEnvironment["MOOPS_BENCHMARK_ARM_LABEL"] =
+            ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_ARM_LABEL"]
+            ?? "CODEX + UITEST"
+        if let startEpoch = ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_START_EPOCH_MS"] {
+            app.launchEnvironment["MOOPS_BENCHMARK_START_EPOCH_MS"] = startEpoch
+        }
+        if let backendBaseURL = ProcessInfo.processInfo.environment["MOOPS_BACKEND_BASE_URL"] {
+            app.launchEnvironment["MOOPS_BACKEND_BASE_URL"] = backendBaseURL
         }
         app.launch()
 
@@ -327,6 +354,214 @@ private enum ReceiptError: LocalizedError {
             return "Invalid MOOPS backend URL: \(value)"
         case .invalidResponse(let statusCode):
             return "Receipt endpoint returned HTTP \(statusCode.map(String.init) ?? "none")"
+        }
+    }
+}
+
+/// The narrow public-UI bridge used by the MOOPS host adapter. Each invocation
+/// handles exactly one request so the host remains the workflow orchestrator.
+final class MOOPSAdapterUITests: XCTestCase {
+    func testMOOPSAdapterCommand() throws {
+        guard let requestJSON = ProcessInfo.processInfo.environment["MOOPS_UI_REQUEST"] else {
+            throw XCTSkip("MOOPS_UI_REQUEST is only supplied by the MOOPS UI adapter.")
+        }
+
+        do {
+            let request = try decodeRequest(requestJSON)
+            let app = XCUIApplication(bundleIdentifier: request.bundleID)
+
+            guard app.state == .runningForeground else {
+                throw AdapterError.appNotForeground(request.bundleID)
+            }
+
+            switch request.operation {
+            case "perform":
+                guard let step = request.step else {
+                    throw AdapterError.missingStep
+                }
+                try perform(step, in: app)
+                emit(["ok": true])
+            case "restore-and-inspect":
+                guard !request.trace.isEmpty else {
+                    throw AdapterError.missingTrace
+                }
+                for step in request.trace {
+                    try perform(step, in: app)
+                }
+                emit([
+                    "ok": true,
+                    "observation": ["nodes": accessibilityNodes(in: app)]
+                ])
+            case "inspect":
+                emit([
+                    "ok": true,
+                    "observation": ["nodes": accessibilityNodes(in: app)]
+                ])
+            default:
+                throw AdapterError.unsupportedOperation(request.operation)
+            }
+        } catch {
+            emit(["ok": false, "error": error.localizedDescription])
+            XCTFail(error.localizedDescription)
+        }
+    }
+
+    private func perform(_ step: AdapterStep, in app: XCUIApplication) throws {
+        let element = matchingElement(step.selector, in: app)
+
+        switch step.operation {
+        case "wait":
+            let timeout = TimeInterval(step.timeoutMilliseconds ?? 10_000) / 1_000
+            guard element.waitForExistence(timeout: timeout) else {
+                throw AdapterError.elementNotFound(step.selector)
+            }
+        case "tap":
+            guard element.waitForExistence(timeout: 5) else {
+                throw AdapterError.elementNotFound(step.selector)
+            }
+            guard element.isHittable else {
+                throw AdapterError.elementNotHittable(step.selector)
+            }
+            element.tap()
+        default:
+            throw AdapterError.unsupportedStep(step.operation)
+        }
+    }
+
+    private func matchingElement(_ selector: AdapterSelector, in app: XCUIApplication) -> XCUIElement {
+        let all = app.descendants(matching: .any)
+        switch selector.channel {
+        case "id":
+            return all.matching(identifier: selector.value).firstMatch
+        case "label":
+            return all.matching(NSPredicate(format: "label == %@", selector.value)).firstMatch
+        case "text":
+            return all.matching(
+                NSPredicate(format: "label == %@ OR value == %@", selector.value, selector.value)
+            ).firstMatch
+        case "value":
+            return all.matching(NSPredicate(format: "value == %@", selector.value)).firstMatch
+        default:
+            return all.matching(identifier: "__unsupported_selector__").firstMatch
+        }
+    }
+
+    private func accessibilityNodes(in app: XCUIApplication) -> [[String: Any]] {
+        app.descendants(matching: .any).allElementsBoundByAccessibilityElement.compactMap { element in
+            let value = publicScalar(element.value)
+            let text = element.label.isEmpty ? (value as? String ?? "") : element.label
+            guard !element.identifier.isEmpty || !element.label.isEmpty || !text.isEmpty else {
+                return nil
+            }
+            return [
+                "id": element.identifier,
+                "label": element.label,
+                "text": text,
+                "value": value,
+                "enabled": element.isEnabled
+            ]
+        }
+    }
+
+    private func publicScalar(_ value: Any?) -> Any {
+        switch value {
+        case let string as String:
+            return string
+        case let number as NSNumber:
+            return number
+        default:
+            return ""
+        }
+    }
+
+    private func decodeRequest(_ json: String) throws -> AdapterRequest {
+        guard let data = json.data(using: .utf8),
+              let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              object["protocolVersion"] as? Int == 1,
+              let operation = object["operation"] as? String,
+              let target = object["target"] as? [String: Any],
+              let bundleID = target["bundleId"] as? String else {
+            throw AdapterError.invalidRequest
+        }
+
+        let step = try (object["step"] as? [String: Any]).map(decodeStep)
+        let trace = try (object["trace"] as? [[String: Any]] ?? []).map(decodeStep)
+        return AdapterRequest(operation: operation, bundleID: bundleID, step: step, trace: trace)
+    }
+
+    private func decodeStep(_ rawStep: [String: Any]) throws -> AdapterStep {
+        guard let stepOperation = rawStep["op"] as? String,
+              let rawSelector = rawStep["selector"] as? [String: Any],
+              let channel = rawSelector["by"] as? String,
+              ["id", "label", "text", "value"].contains(channel),
+              let value = rawSelector["value"] as? String else {
+            throw AdapterError.invalidRequest
+        }
+        return AdapterStep(
+            operation: stepOperation,
+            selector: AdapterSelector(channel: channel, value: value),
+            timeoutMilliseconds: rawStep["timeoutMs"] as? Int
+        )
+    }
+
+    private func emit(_ response: [String: Any]) {
+        guard let data = try? JSONSerialization.data(withJSONObject: response, options: [.sortedKeys]),
+              let json = String(data: data, encoding: .utf8) else {
+            XCTFail("Could not encode the MOOPS UI response.")
+            return
+        }
+        print("MOOPS_UI_RESPONSE:\(json)")
+    }
+}
+
+private struct AdapterRequest {
+    let operation: String
+    let bundleID: String
+    let step: AdapterStep?
+    let trace: [AdapterStep]
+}
+
+private struct AdapterStep {
+    let operation: String
+    let selector: AdapterSelector
+    let timeoutMilliseconds: Int?
+}
+
+private struct AdapterSelector: CustomStringConvertible {
+    let channel: String
+    let value: String
+
+    var description: String { "\(channel)=\(value)" }
+}
+
+private enum AdapterError: LocalizedError {
+    case invalidRequest
+    case appNotForeground(String)
+    case missingStep
+    case missingTrace
+    case unsupportedOperation(String)
+    case unsupportedStep(String)
+    case elementNotFound(AdapterSelector)
+    case elementNotHittable(AdapterSelector)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidRequest:
+            return "MOOPS_UI_REQUEST is not a supported protocol-v1 request."
+        case .appNotForeground(let bundleID):
+            return "The target app \(bundleID) is not running in the foreground."
+        case .missingStep:
+            return "A perform request requires one step."
+        case .missingTrace:
+            return "A restore-and-inspect request requires a nonempty trace."
+        case .unsupportedOperation(let operation):
+            return "Unsupported UI operation: \(operation)."
+        case .unsupportedStep(let operation):
+            return "Unsupported UI step: \(operation)."
+        case .elementNotFound(let selector):
+            return "No public accessibility element matched \(selector)."
+        case .elementNotHittable(let selector):
+            return "The public accessibility element matching \(selector) is not hittable."
         }
     }
 }

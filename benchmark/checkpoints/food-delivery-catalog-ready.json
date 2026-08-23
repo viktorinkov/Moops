@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "fixtureVersion": "food-delivery-f4c8974",
-  "name": "food-delivery-cart",
+  "name": "catalog-ready",
   "app": {
     "bundleId": "com.spencer..Food-Delivery"
   },
@@ -91,21 +91,6 @@
         "value": "home.catalogReady"
       },
       "timeoutMs": 15000
-    },
-    {
-      "op": "tap",
-      "selector": {
-        "by": "id",
-        "value": "home.cart"
-      }
-    },
-    {
-      "op": "wait",
-      "selector": {
-        "by": "id",
-        "value": "screen.cart"
-      },
-      "timeoutMs": 10000
     }
   ],
   "landingPredicates": [
@@ -113,32 +98,16 @@
       "kind": "exists",
       "selector": {
         "by": "id",
-        "value": "screen.cart"
+        "value": "screen.home"
       }
     },
     {
       "kind": "exists",
       "selector": {
         "by": "id",
-        "value": "checkout.ready"
+        "value": "home.catalogReady"
       }
-    },
-    {
-      "kind": "exists",
-      "selector": {
-        "by": "id",
-        "value": "checkout.total"
-      }
-    },
-    {
-      "kind": "equals",
-      "selector": {
-        "by": "id",
-        "value": "checkout.placeOrder"
-      },
-      "field": "enabled",
-      "expected": true
     }
   ],
-  "fingerprint": "sha256:b4d219f9eacb7d7c0b56c94748fc656da159f8857177c88c0d9196b4b54049c0"
+  "fingerprint": "sha256:f69cdbb4e1b9c3a92f16be28faff2e3bae608fec41f189ff152c2bf79ef7e5b6"
 }

@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+
+import { randomUUID } from "node:crypto";
+import { copyFile, readdir, rm, stat } from "node:fs/promises";
+import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { executeCommand } from "../src/command.mjs";
+import {
+  extractXCUITestResponse,
+  prepareXCTestRunInjection,
+  prepareXCUITestInvocation,
+} from "../src/xcuitest-adapter.mjs";
+
+const adapterDirectory = dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = resolve(adapterDirectory, "../../..");
+let temporaryXCTestRun;
+
+async function newestXCTestRun(derivedData) {
+  const products = join(derivedData, "Build/Products");
+  const candidates = (await readdir(products))
+    .filter((name) => name.startsWith("FoodDeliveryBenchmark_") && name.endsWith(".xctestrun"));
+  if (candidates.length === 0) {
+    throw new Error(`no FoodDeliveryBenchmark .xctestrun exists under ${products}`);
+  }
+  const records = await Promise.all(candidates.map(async (name) => {
+    const path = join(products, name);
+    return { path, modifiedMs: (await stat(path)).mtimeMs };
+  }));
+  records.sort((left, right) => right.modifiedMs - left.modifiedMs);
+  return records[0].path;
+}
+
+try {
+  if (process.argv.length !== 3) {
+    throw new Error("expected exactly one JSON request argument");
+  }
+  const derivedData = process.env.MOOPS_DERIVED_DATA;
+  if (typeof derivedData !== "string" || derivedData === "") {
+    throw new Error("MOOPS_DERIVED_DATA is required");
+  }
+  const request = JSON.parse(process.argv[2]);
+  const sourceXCTestRun = await newestXCTestRun(derivedData);
+  temporaryXCTestRun = join(
+    dirname(sourceXCTestRun),
+    `.moops-request-${randomUUID()}-${basename(sourceXCTestRun)}`,
+  );
+  await copyFile(sourceXCTestRun, temporaryXCTestRun);
+  const invocation = prepareXCUITestInvocation(request, {
+    xctestrunPath: temporaryXCTestRun,
+  });
+  const injection = await executeCommand(
+    prepareXCTestRunInjection(invocation.requestJSON, temporaryXCTestRun),
+    { cwd: repositoryRoot, env: process.env, timeoutMs: 10_000 },
+  );
+  if (injection.exitCode !== 0) {
+    throw new Error(`could not inject request into xctestrun (status ${injection.exitCode})`);
+  }
+  const result = await executeCommand(invocation.argv, {
+    cwd: repositoryRoot,
+    env: { ...process.env, NSUnbufferedIO: "YES" },
+    timeoutMs: 180_000,
+  });
+  const xcodeOutput = `${result.stdout}\n${result.stderr}`;
+  let response;
+  try {
+    response = extractXCUITestResponse(xcodeOutput);
+  } catch (cause) {
+    process.stderr.write(`${xcodeOutput.slice(-16_384)}\n`);
+    throw cause;
+  }
+  if (result.exitCode !== 0 && response.ok === true) {
+    throw new Error(`xcodebuild failed with status ${result.exitCode}`);
+  }
+  process.stdout.write(JSON.stringify(response));
+} catch (cause) {
+  process.stderr.write(`MOOPS XCUITest adapter: ${cause.message}\n`);
+  process.exitCode = 1;
+} finally {
+  if (temporaryXCTestRun !== undefined) {
+    await rm(temporaryXCTestRun, { force: true });
+  }
+}

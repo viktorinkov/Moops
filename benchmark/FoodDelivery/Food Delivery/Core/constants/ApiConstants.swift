@@ -8,7 +8,8 @@
 import Foundation
 
 struct ApiConstants {
-    static let BASE_URL = "http://127.0.0.1:8055"
+    static let BASE_URL = ProcessInfo.processInfo.environment["MOOPS_BACKEND_BASE_URL"]
+        ?? "http://127.0.0.1:8055"
     static let LOGIN_URL = BASE_URL + "/auth/login"
     static let REFRESH_URL = BASE_URL + "/auth/refresh"
     static let ME_URL = BASE_URL + "/users/me"

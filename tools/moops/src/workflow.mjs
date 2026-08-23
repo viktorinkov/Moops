@@ -169,6 +169,7 @@ export async function runWorkflow(action, checkpoint, options = {}) {
         protocolVersion: 1,
         operation: "inspect",
         target: target(),
+        selectors: checkpoint.landingPredicates.map((predicate) => predicate.selector),
       }));
       await phase("landing", async () => {
         const landing = evaluateLandingPredicates(
@@ -184,20 +185,12 @@ export async function runWorkflow(action, checkpoint, options = {}) {
       await phase("build", () => runArgv(checkpoint.adapters.build, 900_000));
       await phase("install", () => runArgv(checkpoint.adapters.install, 120_000));
       await phase("launch", () => runArgv(checkpoint.adapters.launch, 120_000));
-      await phase("restore", async () => {
-        for (const step of checkpoint.trace) {
-          await runUI({
-            protocolVersion: 1,
-            operation: "perform",
-            target: target(),
-            step,
-          });
-        }
-      });
-      const inspected = await phase("inspect", () => runUI({
+      const inspected = await phase("restore-and-inspect", () => runUI({
         protocolVersion: 1,
-        operation: "inspect",
+        operation: "restore-and-inspect",
         target: target(),
+        trace: checkpoint.trace,
+        selectors: checkpoint.landingPredicates.map((predicate) => predicate.selector),
       }));
       await phase("landing", async () => {
         const landing = evaluateLandingPredicates(

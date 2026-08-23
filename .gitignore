@@ -6,10 +6,11 @@ build/
 xcuserdata/
 .swiftpm/
 node_modules/
+.moops/
 results/*.json
 results/*.log
+results/claude-mem/
 
 # The complete Jerboa design is local research context, not part of MOOPS.
 jerboa-spec*/
 docs/_local/
-

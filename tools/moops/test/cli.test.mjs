@@ -17,7 +17,7 @@ async function fixture() {
   const adapter = join(directory, "ui-adapter.mjs");
   await writeFile(adapter, `
 const request = JSON.parse(process.argv[2]);
-if (request.operation === "inspect") {
+if (["inspect", "restore-and-inspect"].includes(request.operation)) {
   process.stdout.write(JSON.stringify({
     ok: true,
     observation: { nodes: [{ text: "My cart" }] }

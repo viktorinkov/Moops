@@ -55,7 +55,7 @@ function successfulRunner(calls) {
     calls.push(argv);
     if (argv[0] === testEnvironment.MOOPS_UI_ADAPTER) {
       const request = JSON.parse(argv.at(-1));
-      if (request.operation === "inspect") {
+      if (["inspect", "restore-and-inspect"].includes(request.operation)) {
         return {
           exitCode: 0,
           stdout: JSON.stringify({
@@ -114,7 +114,7 @@ test("verify performs one fresh inspect and no restore mutation", async () => {
   assert.equal(JSON.parse(calls[0].at(-1)).operation, "inspect");
 });
 
-test("build-and-restore runs fixed adapters, public trace, then fresh inspect", async () => {
+test("build-and-restore runs fixed adapters, then replays and inspects in one XCTest session", async () => {
   const calls = [];
   const report = await runWorkflow("build-and-restore", validCheckpoint(), {
     env: testEnvironment,
@@ -126,8 +126,7 @@ test("build-and-restore runs fixed adapters, public trace, then fresh inspect", 
     "build",
     "install",
     "launch",
-    "restore",
-    "inspect",
+    "restore-and-inspect",
     "landing",
   ]);
   assert.deepEqual(calls.slice(0, 3).map((argv) => argv[0]), [
@@ -137,8 +136,9 @@ test("build-and-restore runs fixed adapters, public trace, then fresh inspect", 
   ]);
   assert.deepEqual(
     calls.slice(3).map((argv) => JSON.parse(argv.at(-1)).operation),
-    ["perform", "perform", "inspect"],
+    ["restore-and-inspect"],
   );
+  assert.deepEqual(JSON.parse(calls[3].at(-1)).trace, validCheckpoint().trace);
   assert.equal(Object.values(report.timingsMs).every(Number.isFinite), true);
 });
 

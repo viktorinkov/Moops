@@ -14,6 +14,7 @@ import Combine
 @main
 struct Food_DeliveryApp: App {
     @State var path = NBNavigationPath()
+    private let benchmarkRun = BenchmarkRunContext.current
 
     init() {
 #if DEBUG
@@ -27,9 +28,13 @@ struct Food_DeliveryApp: App {
     var body: some Scene {
         WindowGroup {
             
-            ZStack(content: {
-                
-                    NBNavigationStack(path: $path) {
+            VStack(spacing: 0) {
+                if let benchmarkRun {
+                    BenchmarkHUDView(context: benchmarkRun)
+                        .padding(.vertical, 4)
+                }
+
+                NBNavigationStack(path: $path) {
                         IntroView()
                         
                             .nbNavigationDestination(for: Destination.self) { destination in
@@ -77,9 +82,9 @@ struct Food_DeliveryApp: App {
                                     CartView()
                                 
                             }
-                    }}
-                
-            })
+                    }
+                }
+            }
             
         }
     }

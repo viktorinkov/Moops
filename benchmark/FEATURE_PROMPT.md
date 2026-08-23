@@ -19,9 +19,16 @@ Requirements:
    field when the user places the order.
 6. Keep the existing authenticated session, Core Data cart, backend-derived
    catalog/prices, navigation, and order behavior working.
+7. After the real order request succeeds, replace the checkout with a full-screen
+   green result that says `FEATURE VERIFIED` and shows the concise benchmark arm
+   label supplied in `MOOPS_BENCHMARK_ARM_LABEL`. Expose
+   `verification.screen`, `verification.status`, and `verification.arm` as
+   accessibility identifiers. The environment value is display-only metadata;
+   it must not bypass any feature or backend verification.
 
 Do not replace the runtime flow with mock data, a Preview-only implementation,
 a deep-link that bypasses checkout, or test-only production behavior.
 
 The task passes only when the shared UI acceptance path proves the control can
-change, survives relaunch, and the backend receives the selected value.
+change, survives relaunch, the backend receives the selected value, and the
+real app reaches the labeled verification screen.
