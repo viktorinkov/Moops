@@ -4,6 +4,8 @@ struct BenchmarkRunContext {
     static let current: BenchmarkRunContext? = {
         let environment = ProcessInfo.processInfo.environment
         guard
+            let runID = environment["MOOPS_BENCHMARK_RUN_ID"],
+            !runID.isEmpty,
             let armLabel = environment["MOOPS_BENCHMARK_ARM_LABEL"],
             !armLabel.isEmpty,
             let startValue = environment["MOOPS_BENCHMARK_START_EPOCH_MS"],
@@ -13,11 +15,13 @@ struct BenchmarkRunContext {
         }
 
         return BenchmarkRunContext(
+            runID: runID,
             armLabel: armLabel,
             startedAt: Date(timeIntervalSince1970: startMilliseconds / 1_000)
         )
     }()
 
+    let runID: String
     let armLabel: String
     let startedAt: Date
 

@@ -59,28 +59,7 @@ final class BenchmarkFlowUITests: XCTestCase {
         XCTAssertTrue(confirmation.waitForExistence(timeout: 5), "Order confirmation did not appear.")
         confirmation.buttons["Yes"].tap()
 
-        let verificationScreen = element(identifier: "verification.screen")
-        XCTAssertTrue(
-            verificationScreen.waitForExistence(timeout: 15),
-            "The real order request did not reach the in-app verification result."
-        )
-
-        let verificationStatus = element(identifier: "verification.status")
-        XCTAssertTrue(verificationStatus.waitForExistence(timeout: 2))
-        XCTAssertTrue(
-            verificationStatus.label.localizedCaseInsensitiveContains("FEATURE VERIFIED"),
-            "The final app screen does not visibly report feature verification."
-        )
-
-        let expectedArmLabel = ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_ARM_LABEL"]
-            ?? "CODEX + UITEST"
-        let verificationArm = element(identifier: "verification.arm")
-        XCTAssertTrue(verificationArm.waitForExistence(timeout: 2))
-        XCTAssertEqual(
-            verificationArm.label,
-            expectedArmLabel,
-            "The final app screen does not identify the benchmark setup."
-        )
+        assertVerificationScreen(timeout: 15)
 
         let receipt = try fetchLastOrderReceipt()
         XCTAssertEqual(
@@ -88,21 +67,36 @@ final class BenchmarkFlowUITests: XCTestCase {
             "Meet at door",
             "The local backend did not record the selected delivery_preference."
         )
+
+        app.terminate()
+        app.launchEnvironment["MOOPS_SHOW_LAST_VERIFICATION"] = "1"
+        app.launch()
+        assertVerificationScreen(timeout: 10)
+
+        app.terminate()
+        app.launchEnvironment["MOOPS_BENCHMARK_RUN_ID"] = "\(benchmarkRunID)-different"
+        app.launch()
+        XCTAssertFalse(
+            element(identifier: "verification.screen").waitForExistence(timeout: 2),
+            "A verification result from another benchmark run must never appear as current."
+        )
+
+        app.terminate()
+        app.launchEnvironment["MOOPS_BENCHMARK_RUN_ID"] = benchmarkRunID
+        app.launch()
+        assertVerificationScreen(timeout: 10)
+    }
+
+    func test4PersistedVerificationShowcase() {
+        configureBenchmarkLaunchEnvironment()
+        app.launchEnvironment["MOOPS_SHOW_LAST_VERIFICATION"] = "1"
+        app.launch()
+
+        assertVerificationScreen(timeout: 10)
     }
 
     private func launchAndRestoreToCheckout() {
-        if ProcessInfo.processInfo.environment["MOOPS_ENABLE_INJECTIONIII"] == "1" {
-            app.launchEnvironment["MOOPS_ENABLE_INJECTIONIII"] = "1"
-        }
-        app.launchEnvironment["MOOPS_BENCHMARK_ARM_LABEL"] =
-            ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_ARM_LABEL"]
-            ?? "CODEX + UITEST"
-        if let startEpoch = ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_START_EPOCH_MS"] {
-            app.launchEnvironment["MOOPS_BENCHMARK_START_EPOCH_MS"] = startEpoch
-        }
-        if let backendBaseURL = ProcessInfo.processInfo.environment["MOOPS_BACKEND_BASE_URL"] {
-            app.launchEnvironment["MOOPS_BACKEND_BASE_URL"] = backendBaseURL
-        }
+        configureBenchmarkLaunchEnvironment()
         app.launch()
 
         authenticateIfNeeded()
@@ -130,6 +124,52 @@ final class BenchmarkFlowUITests: XCTestCase {
         XCTAssertTrue(
             element(identifier: "screen.cart").waitForExistence(timeout: 10),
             "The public navigation path did not reach Cart."
+        )
+    }
+
+    private func configureBenchmarkLaunchEnvironment() {
+        if ProcessInfo.processInfo.environment["MOOPS_ENABLE_INJECTIONIII"] == "1" {
+            app.launchEnvironment["MOOPS_ENABLE_INJECTIONIII"] = "1"
+        }
+        app.launchEnvironment["MOOPS_BENCHMARK_ARM_LABEL"] =
+            ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_ARM_LABEL"]
+            ?? "CODEX + UITEST"
+        app.launchEnvironment["MOOPS_BENCHMARK_RUN_ID"] = benchmarkRunID
+        if let startEpoch = ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_START_EPOCH_MS"] {
+            app.launchEnvironment["MOOPS_BENCHMARK_START_EPOCH_MS"] = startEpoch
+        }
+        if let backendBaseURL = ProcessInfo.processInfo.environment["MOOPS_BACKEND_BASE_URL"] {
+            app.launchEnvironment["MOOPS_BACKEND_BASE_URL"] = backendBaseURL
+        }
+    }
+
+    private var benchmarkRunID: String {
+        ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_RUN_ID"]
+            ?? "manual-acceptance"
+    }
+
+    private func assertVerificationScreen(timeout: TimeInterval) {
+        let verificationScreen = element(identifier: "verification.screen")
+        XCTAssertTrue(
+            verificationScreen.waitForExistence(timeout: timeout),
+            "The current run did not reach its in-app verification result."
+        )
+
+        let verificationStatus = element(identifier: "verification.status")
+        XCTAssertTrue(verificationStatus.waitForExistence(timeout: 2))
+        XCTAssertTrue(
+            verificationStatus.label.localizedCaseInsensitiveContains("FEATURE VERIFIED"),
+            "The final app screen does not visibly report feature verification."
+        )
+
+        let expectedArmLabel = ProcessInfo.processInfo.environment["MOOPS_BENCHMARK_ARM_LABEL"]
+            ?? "CODEX + UITEST"
+        let verificationArm = element(identifier: "verification.arm")
+        XCTAssertTrue(verificationArm.waitForExistence(timeout: 2))
+        XCTAssertEqual(
+            verificationArm.label,
+            expectedArmLabel,
+            "The final app screen does not identify the benchmark setup."
         )
     }
 
