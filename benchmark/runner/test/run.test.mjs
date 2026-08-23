@@ -31,6 +31,7 @@ async function fixture(options = {}) {
       derivedData: join(runRoot, "derived", definition.id),
       results: join(runRoot, "results", definition.id),
       environment: {
+        MCP_XCODE_PID: String(53_001 + index),
         BENCHMARK_TEST_DELAY_MS: String(options.delayMs ?? 1_150),
         ...(definition.id === "codex-moops-claudemem"
           ? { BENCHMARK_TRAILING_DELAY_MS: "650" }
@@ -315,6 +316,8 @@ test("starts all arms behind one barrier and records a common clock contract", a
   assert.equal(new Set(observations.map((env) => env.MOOPS_BENCHMARK_DEADLINE_EPOCH_MS)).size, 1);
   assert.equal(new Set(observations.map((env) => env.MOOPS_BACKEND_BASE_URL)).size, 4);
   assert.equal(new Set(observations.map((env) => env.CODEX_HOME)).size, 4);
+  assert.equal(new Set(observations.map((env) => env.MCP_XCODE_PID)).size, 4);
+  assert.equal(observations.every((env) => /^[1-9][0-9]*$/.test(env.MCP_XCODE_PID)), true);
   assert.deepEqual(
     observations.map((env) => env.MOOPS_BENCHMARK_ARM_LABEL),
     ARM_DEFINITIONS.map(({ label }) => label),

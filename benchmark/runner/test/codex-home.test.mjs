@@ -22,6 +22,7 @@ test("scrubs inherited treatment state before applying an arm policy", () => {
     MOOPS_ENABLE_MOOPS: "1",
     SIMCTL_CHILD_MOOPS_ENABLE_INJECTIONIII: "1",
     INJECTION_CONTROL_SOCKET: "/wrong.sock",
+    MCP_XCODE_PID: "99999",
   });
 
   assert.deepEqual(cleaned, { PATH: "/usr/bin" });

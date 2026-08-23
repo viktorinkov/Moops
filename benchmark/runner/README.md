@@ -32,8 +32,8 @@ variables, inventories the live app-server MCP/plugin surface, and fails if A-C
 expose Claude-Mem or if any arm lacks Xcode MCP.
 
 Copy `benchmark.example.json` to a local ignored manifest and replace the four
-UDID placeholders. `validate` checks the manifest and prompt without creating
-resources:
+UDID placeholders and illustrative `MCP_XCODE_PID` values. `validate` checks
+the manifest and prompt without creating resources:
 
 ```sh
 benchmark/runner/moops-benchmark validate benchmark/runner/benchmark.local.json
@@ -46,6 +46,12 @@ simulators with independently cloned app-data seeds, and empty dedicated
 DerivedData/result directories. Boot the simulators. The runner requires every
 worktree to be clean and at the resolved baseline and every simulator to be
 booted before it exposes the prompt.
+
+Open each arm's canonical project in a separate Xcode process:
+`$ARM_WORKTREE/benchmark/FoodDelivery/Food Delivery.xcodeproj`. Put that
+process's positive PID in the arm's `MCP_XCODE_PID`; all four values must be
+distinct. The runner scrubs any inherited host PID before applying the arm
+environment.
 
 Do not share backend port `8055` across arms. The runner starts one fixture
 process per declared port, checks `/healthz` for the pinned catalog revision,
@@ -185,8 +191,11 @@ agent-issued `simctl launch` commands pass the clock, label, and backend URL to
 the app. Only arm C gets `MOOPS_ENABLE_INJECTIONIII=1`. All four app-server
 threads use the same fixed Goal objective; arm-specific developer instructions
 state and hash the treatment policy. Runtime gates require successful Xcode MCP
-in every arm, successful `RenderPreview` only in B (and forbid it elsewhere),
-the Injection receipt only in C, and the verified recall/MOOPS chain only in D.
+in every arm. The first Xcode call must be `XcodeListWindows`; its result must
+contain only that arm's exact canonical project tab, and subsequent tab-bound
+calls must reuse its identifier. B additionally proves its `RenderPreview`
+arguments target that tab, while every other arm forbids Preview. The Injection
+receipt remains C-only and the verified recall/MOOPS chain remains D-only.
 
 The shared acceptance test does not reliably inherit the shell environment.
 For each arm the runner therefore:

@@ -205,6 +205,7 @@ export async function runCodexGoal(argv, options) {
       }
       if (item.type === "mcpToolCall") {
         const resultText = JSON.stringify(item.result ?? {});
+        const argumentsText = JSON.stringify(item.arguments ?? {});
         const record = {
           turnId: message.params.turnId,
           server: item.server,
@@ -213,12 +214,18 @@ export async function runCodexGoal(argv, options) {
           completedEpochMs: message.params.completedAtMs ?? null,
           durationMs: item.durationMs ?? null,
           error: item.error ?? null,
+          argumentsText: argumentsText.length <= 65_536
+            ? argumentsText
+            : argumentsText.slice(0, 65_536),
           resultText: resultText.length <= 262_144 ? resultText : resultText.slice(0, 262_144),
         };
         mcpCalls.push(record);
         await emitEvidence("mcp.completed", {
           threadId,
-          ...Object.fromEntries(Object.entries(record).filter(([key]) => key !== "resultText")),
+          ...Object.fromEntries(Object.entries(record).filter(([key]) => (
+            key !== "resultText" && key !== "argumentsText"
+          ))),
+          argumentsSHA256: `sha256:${createHash("sha256").update(argumentsText).digest("hex")}`,
           resultSHA256: `sha256:${createHash("sha256").update(resultText).digest("hex")}`,
         });
       }
@@ -603,6 +610,7 @@ export async function runCodexGoal(argv, options) {
         mcpCalls,
         commands,
         options.memoryCheckpoints,
+        options.expectedWorkspace,
       );
     } catch (cause) {
       throw new CodexGoalError(cause.code ?? "E_ARM_USAGE", cause.message);

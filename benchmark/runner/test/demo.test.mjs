@@ -38,7 +38,10 @@ function manifestFixture() {
       backendPort: 18_055 + index,
       derivedData: `${runRoot}/derived/${definition.id}`,
       results: `${runRoot}/results/${definition.id}`,
-      environment: index === 2 ? { MOOPS_ENABLE_INJECTIONIII: "1" } : {},
+      environment: {
+        MCP_XCODE_PID: String(51_001 + index),
+        ...(index === 2 ? { MOOPS_ENABLE_INJECTIONIII: "1" } : {}),
+      },
     })),
     showcase: {
       desktopRegion: { x: 0, y: 0, width: 1920, height: 1080 },

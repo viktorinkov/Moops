@@ -12,6 +12,8 @@ const memoryCheckpoints = [
   { name: "cart-ready", path: "benchmark/checkpoints/cart.json", fingerprint: "sha256:cart" },
   { name: "checkout-ready", path: "benchmark/checkpoints/checkout.json", fingerprint: "sha256:checkout" },
 ];
+const expectedWorkspace = "/tmp/codex-uitest/benchmark/FoodDelivery/Food Delivery.xcodeproj";
+const expectedTab = "windowtab-workspace";
 
 function capabilities(armId) {
   const data = [{
@@ -65,22 +67,71 @@ test("runtime inventory requires Xcode everywhere and Claude-Mem only in D", () 
 });
 
 test("usage gate requires Xcode in every arm, RenderPreview only in B, and D fresh recall plus MOOPS", () => {
-  const xcode = { server: "xcode", tool: "XcodeListWindows", status: "completed", resultText: "" };
-  assert.doesNotThrow(() => validateArmUsage("codex-uitest", [xcode], []));
+  const xcode = {
+    server: "xcode",
+    tool: "XcodeListWindows",
+    status: "completed",
+    argumentsText: "{}",
+    resultText: JSON.stringify({
+      content: [{ type: "text", text: `tabIdentifier: ${expectedTab}\nworkspacePath: ${expectedWorkspace}` }],
+    }),
+  };
+  assert.doesNotThrow(() => validateArmUsage("codex-uitest", [xcode], [], [], expectedWorkspace));
   assert.throws(
-    () => validateArmUsage("codex-previews", [xcode], []),
+    () => validateArmUsage("codex-previews", [xcode], [], [], expectedWorkspace),
     /RenderPreview/,
   );
   assert.doesNotThrow(() => validateArmUsage("codex-previews", [
     xcode,
-    { server: "xcode", tool: "RenderPreview", status: "completed", resultText: "preview" },
-  ], []));
+    {
+      server: "xcode",
+      tool: "RenderPreview",
+      status: "completed",
+      argumentsText: JSON.stringify({ tabIdentifier: expectedTab }),
+      resultText: "preview",
+    },
+  ], [], [], expectedWorkspace));
   assert.throws(
     () => validateArmUsage("codex-uitest", [
       xcode,
-      { server: "xcode", tool: "RenderPreview", status: "completed", resultText: "preview" },
-    ], []),
+      {
+        server: "xcode",
+        tool: "RenderPreview",
+        status: "completed",
+        argumentsText: JSON.stringify({ tabIdentifier: expectedTab }),
+        resultText: "preview",
+      },
+    ], [], [], expectedWorkspace),
     /forbids RenderPreview/,
+  );
+  assert.throws(
+    () => validateArmUsage("codex-uitest", [{ ...xcode, resultText: "another workspace" }], [], [], expectedWorkspace),
+    /XcodeListWindows|workspace/i,
+  );
+  assert.throws(
+    () => validateArmUsage("codex-uitest", [{
+      ...xcode,
+      resultText: JSON.stringify({
+        content: [{
+          type: "text",
+          text: `tabIdentifier: ${expectedTab}\nworkspacePath: ${expectedWorkspace}\ntabIdentifier: wrong\nworkspacePath: /tmp/other/Food Delivery.xcodeproj`,
+        }],
+      }),
+    }], [], [], expectedWorkspace),
+    /another workspace/i,
+  );
+  assert.throws(
+    () => validateArmUsage("codex-previews", [
+      xcode,
+      {
+        server: "xcode",
+        tool: "RenderPreview",
+        status: "completed",
+        argumentsText: JSON.stringify({ tabIdentifier: "another-tab" }),
+        resultText: "preview",
+      },
+    ], [], [], expectedWorkspace),
+    /tab|workspace/i,
   );
 
   const commands = [
@@ -96,6 +147,7 @@ test("usage gate requires Xcode in every arm, RenderPreview only in B, and D fre
     [xcode],
     commands,
     memoryCheckpoints,
+    expectedWorkspace,
   ));
   assert.throws(
     () => validateArmUsage(
@@ -103,6 +155,7 @@ test("usage gate requires Xcode in every arm, RenderPreview only in B, and D fre
       [xcode],
       commands.filter(({ command }) => !command.includes("recall-helper.mjs")),
       memoryCheckpoints,
+      expectedWorkspace,
     ),
     /recall helper/,
   );

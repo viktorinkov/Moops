@@ -268,6 +268,19 @@ export function normalizeManifest(raw, options = {}) {
   assertUnique(arms.map(({ derivedData }) => derivedData), "DerivedData paths");
   assertUnique(arms.map(({ results }) => results), "results paths");
   assertUnique(arms.map(({ backendPort }) => backendPort), "backend ports");
+  for (const arm of arms) {
+    if (!/^[1-9][0-9]*$/.test(arm.environment.MCP_XCODE_PID ?? "")
+      || !Number.isSafeInteger(Number(arm.environment.MCP_XCODE_PID))) {
+      fail(
+        "E_MANIFEST_XCODE_BINDING",
+        `${arm.id}.environment.MCP_XCODE_PID must be a positive numeric Xcode process ID`,
+      );
+    }
+  }
+  assertUnique(
+    arms.map(({ environment }) => environment.MCP_XCODE_PID),
+    "MCP_XCODE_PID values",
+  );
   const everyGeneratedPath = arms.flatMap(({ worktree, derivedData, results }) => [
     worktree,
     derivedData,

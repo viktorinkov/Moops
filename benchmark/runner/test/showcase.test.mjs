@@ -15,9 +15,10 @@ function fixture() {
     backendPort: 18_055 + index,
     derivedData: `${runRoot}/derived/${definition.id}`,
     results: `${runRoot}/results/${definition.id}`,
-    environment: definition.id === "codex-injection"
-      ? { MOOPS_ENABLE_INJECTIONIII: "1" }
-      : {},
+    environment: {
+      MCP_XCODE_PID: String(52_001 + index),
+      ...(definition.id === "codex-injection" ? { MOOPS_ENABLE_INJECTIONIII: "1" } : {}),
+    },
   }));
   const manifest = normalizeManifest({
     schemaVersion: 1,

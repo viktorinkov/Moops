@@ -219,6 +219,10 @@ async function runArm(manifest, arm, context) {
     backendBaseURL: context.backend.baseURL,
   });
   const environment = armEnvironment(manifest, arm, variables, context.codexHome);
+  const expectedWorkspace = join(
+    arm.worktree,
+    "benchmark/FoodDelivery/Food Delivery.xcodeproj",
+  );
   const baseArgv = renderArgv(manifest.agentCommand, variables);
   const policy = armPolicy(arm.id);
   const argv = arm.id === CLAUDE_MEM_ARM_ID
@@ -236,6 +240,10 @@ async function runArm(manifest, arm, context) {
       ? context.claudeMemPreparation.memoryCheckpoints
       : [],
     developerInstructionsSHA256: policy.sha256,
+    xcodeBinding: {
+      pid: Number(environment.MCP_XCODE_PID),
+      expectedWorkspace,
+    },
   });
   const runGoal = context.runGoal ?? runCodexGoal;
   const command = await runGoal(argv, {
@@ -244,6 +252,7 @@ async function runArm(manifest, arm, context) {
     objective: context.goalObjective,
     armId: arm.id,
     developerInstructions: policy.instructions,
+    expectedWorkspace,
     memoryCheckpoints: arm.id === CLAUDE_MEM_ARM_ID
       ? context.claudeMemPreparation.memoryCheckpoints
       : [],

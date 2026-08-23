@@ -42,7 +42,10 @@ function validManifest() {
       backendPort: 18_055 + index,
       derivedData: `${runRoot}/derived/${definition.id}`,
       results: `${runRoot}/results/${definition.id}`,
-      environment: index === 2 ? { MOOPS_ENABLE_INJECTIONIII: "1" } : {},
+      environment: {
+        MCP_XCODE_PID: String(50_001 + index),
+        ...(index === 2 ? { MOOPS_ENABLE_INJECTIONIII: "1" } : {}),
+      },
     })),
     showcase: {
       desktopRegion: { x: 0, y: 0, width: 1920, height: 1080 },
@@ -138,4 +141,14 @@ test("requires every generated path to stay inside the dedicated run root", () =
     () => normalizeManifest(escaped, { manifestPath: "/tmp/manifest.json" }),
     (error) => error.code === "E_MANIFEST_PATH",
   );
+});
+
+test("requires one distinct numeric Xcode MCP process binding per arm", () => {
+  const source = validManifest();
+  source.arms[0].environment.MCP_XCODE_PID = "not-a-pid";
+  assert.throws(() => normalizeManifest(source, { manifestPath: "/tmp/manifest.json" }), /MCP_XCODE_PID/);
+
+  const duplicate = validManifest();
+  duplicate.arms[3].environment.MCP_XCODE_PID = duplicate.arms[2].environment.MCP_XCODE_PID;
+  assert.throws(() => normalizeManifest(duplicate, { manifestPath: "/tmp/manifest.json" }), /MCP_XCODE_PID|unique/);
 });

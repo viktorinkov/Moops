@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 
 const COMMON = [
   "Use the Apple Xcode MCP exposed as server `xcode` by `/usr/bin/xcrun mcpbridge`.",
+  "Your first Xcode MCP call must be XcodeListWindows. Use only the tab for the exact canonical workspace `$MOOPS_BENCHMARK_WORKTREE/benchmark/FoodDelivery/Food Delivery.xcodeproj`; ignore every other tab.",
+  "The runner binds this arm's bridge to its dedicated Xcode process through MCP_XCODE_PID.",
   "Complete at least one successful Xcode MCP call and keep the real app as the source of truth.",
 ];
 
@@ -103,9 +105,78 @@ export function validateRuntimeCapabilities(armId, mcpResult, pluginResult) {
   };
 }
 
-export function validateArmUsage(armId, mcpCalls, commands, memoryCheckpoints = []) {
-  const successfulXcode = mcpCalls.filter(({ server, status }) => (
-    server === "xcode" && status === "completed"
+function evidenceValues(source) {
+  let value = source;
+  if (typeof source === "string") {
+    try { value = JSON.parse(source); } catch { value = source; }
+  }
+  const strings = [];
+  const tabIdentifiers = [];
+  const visit = (candidate, key = null) => {
+    if (typeof candidate === "string") {
+      strings.push(candidate);
+      if (key === "tabIdentifier") tabIdentifiers.push(candidate);
+      for (const match of candidate.matchAll(/\btabIdentifier["']?\s*[=:]\s*["']?([A-Za-z0-9._:-]+)/g)) {
+        tabIdentifiers.push(match[1]);
+      }
+      return;
+    }
+    if (Array.isArray(candidate)) {
+      candidate.forEach((entry) => visit(entry));
+      return;
+    }
+    if (candidate && typeof candidate === "object") {
+      Object.entries(candidate).forEach(([entryKey, entry]) => visit(entry, entryKey));
+    }
+  };
+  visit(value);
+  return { strings, tabIdentifiers: [...new Set(tabIdentifiers)] };
+}
+
+function validateXcodeWorkspaceBinding(armId, xcodeCalls, expectedWorkspace) {
+  if (typeof expectedWorkspace !== "string" || expectedWorkspace === "") {
+    fail("E_XCODE_WORKSPACE", `${armId} omitted its expected canonical Xcode workspace`);
+  }
+  const first = xcodeCalls[0];
+  if (!first || first.tool !== "XcodeListWindows" || first.status !== "completed") {
+    fail("E_XCODE_WORKSPACE", `${armId} first Xcode MCP call was not a successful XcodeListWindows`);
+  }
+  const listing = evidenceValues(first.resultText);
+  if (!listing.strings.some((value) => value.includes(expectedWorkspace))) {
+    fail("E_XCODE_WORKSPACE", `${armId} XcodeListWindows did not contain ${expectedWorkspace}`);
+  }
+  const listedWorkspaces = listing.strings.flatMap((value) => (
+    [...value.matchAll(/\/[^\n\r"']+?\.xcodeproj/g)].map((match) => match[0])
+  ));
+  if (listedWorkspaces.some((workspace) => workspace !== expectedWorkspace)) {
+    fail("E_XCODE_WORKSPACE", `${armId} XcodeListWindows exposed another workspace tab`);
+  }
+  if (listing.tabIdentifiers.length === 0) {
+    fail("E_XCODE_WORKSPACE", `${armId} XcodeListWindows omitted the canonical tab identifier`);
+  }
+  for (const call of xcodeCalls.slice(1)) {
+    const argumentTabs = evidenceValues(call.argumentsText).tabIdentifiers;
+    if (argumentTabs.some((tab) => !listing.tabIdentifiers.includes(tab))) {
+      fail("E_XCODE_WORKSPACE", `${armId} ${call.tool} targeted a tab outside its canonical workspace`);
+    }
+    if (call.tool === "RenderPreview" && argumentTabs.length === 0) {
+      fail("E_PREVIEW_WORKSPACE", "RenderPreview omitted the canonical workspace tabIdentifier");
+    }
+  }
+  return { expectedWorkspace, tabIdentifiers: listing.tabIdentifiers };
+}
+
+export function validateArmUsage(
+  armId,
+  mcpCalls,
+  commands,
+  memoryCheckpoints = [],
+  expectedWorkspace,
+) {
+  const xcodeCalls = mcpCalls.filter(({ server }) => server === "xcode");
+  const workspaceBinding = validateXcodeWorkspaceBinding(armId, xcodeCalls, expectedWorkspace);
+  const successfulXcode = xcodeCalls.filter(({ status }) => (
+    status === "completed"
   ));
   if (successfulXcode.length === 0) fail("E_XCODE_MCP_USE", `${armId} did not use Xcode MCP successfully`);
   const previewCalls = mcpCalls.filter(({ server, tool }) => server === "xcode" && tool === "RenderPreview");
@@ -120,7 +191,11 @@ export function validateArmUsage(armId, mcpCalls, commands, memoryCheckpoints = 
   const memoryCalls = mcpCalls.filter(({ server }) => server === "mcp-search");
   if (armId !== "codex-moops-claudemem") {
     if (memoryCalls.length !== 0) fail("E_MEMORY_ISOLATION", `${armId} used Claude-Mem`);
-    return { xcodeCalls: successfulXcode.length, renderPreviewCalls: previewCalls.length };
+    return {
+      xcodeCalls: successfulXcode.length,
+      renderPreviewCalls: previewCalls.length,
+      workspaceBinding,
+    };
   }
   if (memoryCalls.length !== 0) {
     fail("E_MEMORY_USE", "arm D outer Goal must delegate fresh recall to recall-helper");
@@ -183,5 +258,6 @@ export function validateArmUsage(armId, mcpCalls, commands, memoryCheckpoints = 
     recallEvidencePath: "claude-mem-recall.jsonl",
     selectedCheckpoint: "checkout-ready",
     recalledCheckpoints: memoryCheckpoints,
+    workspaceBinding,
   };
 }

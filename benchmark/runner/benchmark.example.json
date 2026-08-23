@@ -60,7 +60,9 @@
       "backendPort": 18055,
       "derivedData": "../../.benchmark-runs/derived/codex-uitest",
       "results": "../../.benchmark-runs/results/codex-uitest",
-      "environment": {}
+      "environment": {
+        "MCP_XCODE_PID": "51001"
+      }
     },
     {
       "id": "codex-previews",
@@ -71,6 +73,7 @@
       "derivedData": "../../.benchmark-runs/derived/codex-previews",
       "results": "../../.benchmark-runs/results/codex-previews",
       "environment": {
+        "MCP_XCODE_PID": "51002",
         "MOOPS_ENABLE_PREVIEWS": "1"
       }
     },
@@ -83,6 +86,7 @@
       "derivedData": "../../.benchmark-runs/derived/codex-injection",
       "results": "../../.benchmark-runs/results/codex-injection",
       "environment": {
+        "MCP_XCODE_PID": "51003",
         "MOOPS_ENABLE_INJECTIONIII": "1"
       }
     },
@@ -95,6 +99,7 @@
       "derivedData": "../../.benchmark-runs/derived/codex-moops-claudemem",
       "results": "../../.benchmark-runs/results/codex-moops-claudemem",
       "environment": {
+        "MCP_XCODE_PID": "51004",
         "MOOPS_ENABLE_CLAUDEMEM": "1",
         "MOOPS_ENABLE_MOOPS": "1"
       }

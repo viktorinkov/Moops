@@ -42,6 +42,7 @@ async function recordObserved(threadParams) {
   const names = [
     "MOOPS_BENCHMARK_RUN_ID",
     "CODEX_HOME",
+    "MCP_XCODE_PID",
     "MOOPS_CLAUDE_MEM_RUN_ID",
     "MOOPS_BENCHMARK_ARM_ID",
     "MOOPS_BENCHMARK_ARM_LABEL",
@@ -179,7 +180,12 @@ for await (const line of lines) {
       tool: "XcodeListWindows",
       status: "completed",
       arguments: {},
-      result: { content: [{ type: "text", text: "window" }] },
+      result: {
+        content: [{
+          type: "text",
+          text: `tabIdentifier: tab-${process.env.MOOPS_BENCHMARK_ARM_ID}\nworkspacePath: ${process.env.MOOPS_BENCHMARK_WORKTREE}/benchmark/FoodDelivery/Food Delivery.xcodeproj`,
+        }],
+      },
     });
     if (process.env.MOOPS_BENCHMARK_ARM_ID === "codex-previews") {
       completedItem({
@@ -188,7 +194,7 @@ for await (const line of lines) {
         server: "xcode",
         tool: "RenderPreview",
         status: "completed",
-        arguments: {},
+        arguments: { tabIdentifier: `tab-${process.env.MOOPS_BENCHMARK_ARM_ID}` },
         result: { content: [{ type: "text", text: "preview rendered" }] },
       });
     }
