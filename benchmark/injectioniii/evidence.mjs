@@ -37,11 +37,16 @@ function requireAbsolutePath(value, context) {
 }
 
 function successful(result, context) {
-  if (!result || result.exitCode !== 0) {
+  if (!result || result.exitCode !== 0 || result.timedOut === true || result.spawnError) {
     const detail = typeof result?.stderr === "string" ? result.stderr.trim() : "";
+    const processFailure = result?.timedOut === true
+      ? "timed out"
+      : result?.spawnError
+        ? `could not start: ${result.spawnError}`
+        : `exited with ${result?.exitCode ?? "unknown"}`;
     fail(
       "E_INJECTION_COMMAND",
-      `${context} exited with ${result?.exitCode ?? "unknown"}${detail ? `: ${detail}` : ""}`,
+      `${context} ${processFailure}${detail ? `: ${detail}` : ""}`,
     );
   }
   return typeof result.stdout === "string" ? result.stdout : "";

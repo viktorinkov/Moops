@@ -134,6 +134,23 @@ test("preflight rejects any InjectionIII version other than the benchmark pin", 
   );
 });
 
+test("preflight rejects a timed-out process probe even if it reports exit zero", async () => {
+  await assert.rejects(
+    () => collectPreflightEvidence({
+      worktree: WORKTREE,
+      derivedData: DERIVED_DATA,
+      injectionAppPath: INJECTION_APP,
+      controlSocketPath: CONTROL_SOCKET,
+    }, {
+      captureCommand: async (argv) => argv[0] === "/usr/bin/plutil"
+        ? { ...successful("5.2.1\n"), timedOut: true }
+        : preflightCapture(argv),
+      controlCommand: successfulControl,
+    }),
+    (error) => error instanceof InjectionEvidenceError && error.code === "E_INJECTION_COMMAND",
+  );
+});
+
 test("postflight proves the arm-C process connection, loaded modules, and an actual injection attempt", async () => {
   const preflight = await preflightEvidence();
   const report = await collectPostflightEvidence({
