@@ -23,7 +23,9 @@ function successful(stdout = "") {
 
 function preflightCapture(argv) {
   if (argv[0] === "/usr/bin/plutil") return successful("5.2.1\n");
-  if (argv[0] === "/usr/bin/pgrep") return successful("64052\n");
+  if (argv[0] === "/usr/sbin/lsof" && argv.includes("-Fpc")) {
+    return successful("p64052\ncInjectionIII\nf9\n");
+  }
   if (argv[0] === "/usr/sbin/lsof") {
     return successful(
       "Injection 64052 user 5u IPv4 0x0 0t0 TCP 127.0.0.1:8898 (LISTEN)\n",

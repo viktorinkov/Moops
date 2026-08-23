@@ -60,15 +60,17 @@ function successfulControl(result, action) {
   return result;
 }
 
-function parseOnePid(source) {
+function parseSocketOwnerPid(source) {
   const values = source
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
-  if (values.length !== 1 || !/^[1-9][0-9]*$/.test(values[0])) {
-    fail("E_INJECTION_HOST", "exactly one InjectionIII host process must be running");
+  const pids = values.filter((line) => /^p[1-9][0-9]*$/.test(line));
+  const commands = values.filter((line) => line.startsWith("c"));
+  if (pids.length !== 1 || commands.length !== 1 || commands[0] !== "cInjectionIII") {
+    fail("E_INJECTION_HOST", "the control socket must belong to exactly one InjectionIII host process");
   }
-  const pid = Number(values[0]);
+  const pid = Number(pids[0].slice(1));
   if (!Number.isSafeInteger(pid)) fail("E_INJECTION_HOST", "InjectionIII host PID is invalid");
   return pid;
 }
@@ -296,9 +298,9 @@ export async function collectPreflightEvidence(options, dependencies = {}) {
     );
   }
 
-  const hostPid = parseOnePid(successful(
-    await capture(["/usr/bin/pgrep", "-x", "InjectionIII"]),
-    "InjectionIII host lookup",
+  const hostPid = parseSocketOwnerPid(successful(
+    await capture(["/usr/sbin/lsof", "-nP", "-Fpc", controlSocketPath]),
+    "InjectionIII control-socket owner check",
   ));
   const listener = successful(await capture([
     "/usr/sbin/lsof", "-nP", "-a", "-p", String(hostPid),

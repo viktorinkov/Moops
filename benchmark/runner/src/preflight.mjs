@@ -44,6 +44,10 @@ function simulatorIndex(raw) {
   return index;
 }
 
+export function commitObjectExpression(reference) {
+  return `${reference}^{commit}`;
+}
+
 export async function preflightBenchmark(manifest) {
   await Promise.all([
     requireDirectory(manifest.runRoot, "runRoot"),
@@ -65,7 +69,14 @@ export async function preflightBenchmark(manifest) {
   const promptSHA256 = `sha256:${createHash("sha256").update(prompt).digest("hex")}`;
 
   const baselineResolved = await successful(
-    ["/usr/bin/git", "-C", manifest.repositoryRoot, "rev-parse", manifest.baselineCommit],
+    [
+      "/usr/bin/git",
+      "-C",
+      manifest.repositoryRoot,
+      "rev-parse",
+      "--verify",
+      commitObjectExpression(manifest.baselineCommit),
+    ],
     { timeoutMs: 30_000 },
   );
   const versions = {};
