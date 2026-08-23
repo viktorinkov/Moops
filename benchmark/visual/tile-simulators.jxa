@@ -1,0 +1,143 @@
+ObjC.import("CoreGraphics");
+
+function screenRecordingPreflight() {
+  try {
+    return {
+      checked: true,
+      granted: Boolean($.CGPreflightScreenCaptureAccess()),
+    };
+  } catch (error) {
+    return {
+      checked: false,
+      granted: null,
+      error: String(error),
+    };
+  }
+}
+
+function integerFrame(window) {
+  const position = window.position();
+  const size = window.size();
+  return {
+    x: Math.round(Number(position[0])),
+    y: Math.round(Number(position[1])),
+    width: Math.round(Number(size[0])),
+    height: Math.round(Number(size[1])),
+  };
+}
+
+function visibleStandardWindows(systemEvents) {
+  const result = [];
+  const processes = systemEvents.applicationProcesses.whose({ name: "Simulator" })();
+  processes.forEach((process) => {
+    const processId = Number(process.unixId());
+    process.windows().forEach((window, windowIndex) => {
+      let visible = true;
+      try { visible = Boolean(window.visible()); } catch (_) { /* AX window has no visible attribute. */ }
+      const title = String(window.name());
+      if (!visible || title.length === 0) return;
+      result.push({ processId, windowIndex, title, window });
+    });
+  });
+  return result;
+}
+
+function publicWindow(windowRecord) {
+  return {
+    processId: windowRecord.processId,
+    windowIndex: windowRecord.windowIndex,
+    title: String(windowRecord.window.name()),
+    frame: integerFrame(windowRecord.window),
+  };
+}
+
+function responseBase(accessibility, screenRecording, windows) {
+  return {
+    schemaVersion: 1,
+    accessibility,
+    screenRecording,
+    discoveredWindows: windows.map(publicWindow),
+  };
+}
+
+function failResponse(base, code, message) {
+  base.operation = { ok: false, code, message };
+  return JSON.stringify(base);
+}
+
+function run(argv) {
+  const screenRecording = screenRecordingPreflight();
+  const systemEvents = Application("System Events");
+  let trusted = false;
+  try {
+    trusted = Boolean(systemEvents.UIElementsEnabled());
+  } catch (_) {
+    trusted = false;
+  }
+  const accessibility = { checked: true, trusted };
+  if (!trusted) {
+    return JSON.stringify(responseBase(accessibility, screenRecording, []));
+  }
+
+  let request;
+  try {
+    request = JSON.parse(argv[0]);
+  } catch (error) {
+    return failResponse(
+      responseBase(accessibility, screenRecording, []),
+      "E_VISUAL_JXA",
+      `invalid layout request: ${String(error)}`,
+    );
+  }
+
+  let windows;
+  try {
+    windows = visibleStandardWindows(systemEvents);
+  } catch (error) {
+    return failResponse(
+      responseBase(accessibility, screenRecording, []),
+      "E_VISUAL_JXA",
+      `could not enumerate Simulator windows: ${String(error)}`,
+    );
+  }
+  const base = responseBase(accessibility, screenRecording, windows);
+  const assignments = Array.isArray(request.assignments) ? request.assignments : [];
+  if (assignments.length !== 4 || windows.length !== 4) {
+    return failResponse(base, "E_VISUAL_WINDOW_SET", "exactly four visible Simulator windows are required");
+  }
+
+  const selected = [];
+  for (const assignment of assignments) {
+    const matches = windows.filter(({ title }) => title === assignment.title);
+    if (matches.length !== 1) {
+      return failResponse(
+        base,
+        "E_VISUAL_WINDOW_SET",
+        `expected exactly one Simulator window titled ${JSON.stringify(assignment.title)}`,
+      );
+    }
+    selected.push({ assignment, windowRecord: matches[0] });
+  }
+  if (new Set(selected.map(({ windowRecord }) => `${windowRecord.processId}:${windowRecord.windowIndex}`)).size !== 4) {
+    return failResponse(base, "E_VISUAL_WINDOW_SET", "configured titles did not select four unique Simulator windows");
+  }
+
+  try {
+    selected.forEach(({ assignment, windowRecord }) => {
+      const frame = assignment.expectedFrame;
+      windowRecord.window.size = [frame.width, frame.height];
+      windowRecord.window.position = [frame.x, frame.y];
+    });
+    delay(0.2);
+  } catch (error) {
+    return failResponse(
+      responseBase(accessibility, screenRecording, windows),
+      "E_VISUAL_JXA",
+      `could not position Simulator windows: ${String(error)}`,
+    );
+  }
+
+  const finalResponse = responseBase(accessibility, screenRecording, windows);
+  finalResponse.operation = { ok: true };
+  return JSON.stringify(finalResponse);
+}

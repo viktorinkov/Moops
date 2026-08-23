@@ -1,0 +1,8 @@
+{
+  "name": "moops-benchmark-visual",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}
