@@ -264,6 +264,7 @@ test("orders produce a deterministic inspectable receipt and reset cleanly", asy
   const orderInput = {
     status: "published",
     order_status: "process",
+    delivery_preference: "Meet at door",
     comments: "Leave at the side gate",
     delivery_address_id: "home",
     foods: [
@@ -353,6 +354,37 @@ test("orders reject malformed or unknown food data without changing the receipt"
   });
   assert.equal(unknownModifier.response.status, 422);
   assert.equal(unknownModifier.body.errors[0].extensions.code, "INVALID_PAYLOAD");
+
+  const missingDeliveryPreference = await request("/items/orders", {
+    method: "POST",
+    headers: {
+      ...bearer(token.access_token),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ foods: [{ id: 1, quantity: 1 }] }),
+  });
+  assert.equal(missingDeliveryPreference.response.status, 422);
+  assert.equal(
+    missingDeliveryPreference.body.errors[0].extensions.code,
+    "INVALID_PAYLOAD",
+  );
+
+  const unknownDeliveryPreference = await request("/items/orders", {
+    method: "POST",
+    headers: {
+      ...bearer(token.access_token),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      delivery_preference: "Hand it to the dog",
+      foods: [{ id: 1, quantity: 1 }],
+    }),
+  });
+  assert.equal(unknownDeliveryPreference.response.status, 422);
+  assert.equal(
+    unknownDeliveryPreference.body.errors[0].extensions.code,
+    "INVALID_PAYLOAD",
+  );
 
   const receipt = await request("/__benchmark/last-order");
   assert.deepEqual(receipt.body, { data: null });

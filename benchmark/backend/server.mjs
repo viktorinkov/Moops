@@ -17,6 +17,7 @@ import {
 } from "./fixtures.mjs";
 
 const JSON_LIMIT_BYTES = 64 * 1024;
+const DELIVERY_PREFERENCES = new Set(["Leave at door", "Meet at door"]);
 const FIXTURE_HEADER = {
   "x-content-type-options": "nosniff",
   "x-mooops-fixture": FIXTURE_NAME,
@@ -200,6 +201,10 @@ function resetState(state) {
 }
 
 function validateOrderInput(input) {
+  if (!DELIVERY_PREFERENCES.has(input.delivery_preference)) {
+    throw new RequestError(422, "Order requires a valid delivery preference.", "INVALID_PAYLOAD");
+  }
+
   if (!Array.isArray(input.foods) || input.foods.length === 0) {
     throw new RequestError(422, "An order requires at least one food.", "INVALID_PAYLOAD");
   }

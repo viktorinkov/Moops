@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "project": "moops-food-delivery",
+  "xcodeScheme": "FoodDeliveryBenchmark",
+  "claudeMem": {
+    "version": "13.15.3",
+    "sourceRepository": "https://github.com/thedotmack/claude-mem",
+    "sourceCommit": "e2d1df569a8f04075d40e92461128ece7cf04c82",
+    "provider": "claude-subscription",
+    "workerPort": 37977,
+    "storage": "local-sqlite",
+    "telemetry": "disabled",
+    "cloudSync": "disabled"
+  },
+  "checkpoints": [
+    {
+      "name": "catalog-ready",
+      "kind": "executable-checkpoint",
+      "summary": "The authenticated app is on Home and the deterministic HTTP catalog has finished loading.",
+      "searchTerms": [
+        "catalog-ready",
+        "authenticated catalog loaded",
+        "deterministic backend catalog"
+      ],
+      "publicLandingIds": [
+        "screen.home",
+        "home.catalogReady"
+      ],
+      "executableCheckpoint": {
+        "path": "benchmark/checkpoints/food-delivery-catalog-ready.json",
+        "fingerprint": "sha256:f69cdbb4e1b9c3a92f16be28faff2e3bae608fec41f189ff152c2bf79ef7e5b6"
+      }
+    },
+    {
+      "name": "cart-ready",
+      "kind": "executable-checkpoint",
+      "summary": "The authenticated Home screen exposes the fixed baseline of exactly two real persisted cart items before checkout navigation.",
+      "searchTerms": [
+        "cart-ready",
+        "two-item persisted cart",
+        "authenticated home cart"
+      ],
+      "publicLandingIds": [
+        "screen.home",
+        "home.cart"
+      ],
+      "executableCheckpoint": {
+        "path": "benchmark/checkpoints/food-delivery-cart-ready.json",
+        "fingerprint": "sha256:bce8076265e8e84b3e7c2a08f9b0317d4d02deb2a2f0be9e1a8c7ea17aada5a4"
+      }
+    },
+    {
+      "name": "checkout-ready",
+      "kind": "executable-checkpoint",
+      "summary": "MOOPS can rebuild, preserve the real app store, and replay the public Home-to-Cart route to a freshly verified checkout.",
+      "searchTerms": [
+        "checkout-ready",
+        "MOOPS build and restore checkout",
+        "persistent cart checkout total"
+      ],
+      "publicLandingIds": [
+        "screen.cart",
+        "checkout.ready",
+        "checkout.total",
+        "checkout.placeOrder"
+      ],
+      "executableCheckpoint": {
+        "path": "benchmark/checkpoints/food-delivery-cart.json",
+        "fingerprint": "sha256:b4d219f9eacb7d7c0b56c94748fc656da159f8857177c88c0d9196b4b54049c0"
+      }
+    }
+  ]
+}

@@ -117,19 +117,14 @@
       }
     },
     {
-      "kind": "exists",
+      "kind": "equals",
       "selector": {
         "by": "id",
         "value": "home.cart"
-      }
-    },
-    {
-      "kind": "exists",
-      "selector": {
-        "by": "id",
-        "value": "home.cart.itemCount"
-      }
+      },
+      "field": "value",
+      "expected": "2 items"
     }
   ],
-  "fingerprint": "sha256:1a6d1f7ac6386e81adae3e250cb26da83fcbce939adead05226de295eb3959ba"
+  "fingerprint": "sha256:bce8076265e8e84b3e7c2a08f9b0317d4d02deb2a2f0be9e1a8c7ea17aada5a4"
 }

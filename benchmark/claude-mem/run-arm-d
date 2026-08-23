@@ -1,0 +1,161 @@
+#!/bin/sh
+set -eu
+
+umask 077
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPOSITORY_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+
+if [ -n "${MOOPS_CLAUDE_MEM_DATA_DIR:-}" ]; then
+  if [ "${MOOPS_CLAUDE_MEM_TEST_ONLY_ALLOW_DATA_DIR:-}" != "1" ]; then
+    echo "run-arm-d: MOOPS_CLAUDE_MEM_DATA_DIR requires MOOPS_CLAUDE_MEM_TEST_ONLY_ALLOW_DATA_DIR=1" >&2
+    exit 2
+  fi
+  case "$MOOPS_CLAUDE_MEM_DATA_DIR" in
+    /*) ;;
+    *)
+      echo "run-arm-d: test-only data directory must be absolute" >&2
+      exit 2
+      ;;
+  esac
+  CLAUDE_MEM_DATA_DIR=$MOOPS_CLAUDE_MEM_DATA_DIR
+  STORE_ID=test-only
+else
+  if [ -z "${MOOPS_CLAUDE_MEM_RUN_ID:-}" ]; then
+    echo "run-arm-d: MOOPS_CLAUDE_MEM_RUN_ID is required" >&2
+    exit 2
+  fi
+  case "$MOOPS_CLAUDE_MEM_RUN_ID" in
+    .|..|*[!A-Za-z0-9._-]*)
+      echo "run-arm-d: MOOPS_CLAUDE_MEM_RUN_ID may contain only letters, digits, dot, underscore, and hyphen, and may not be . or .." >&2
+      exit 2
+      ;;
+  esac
+  CLAUDE_MEM_DATA_DIR="$REPOSITORY_ROOT/results/claude-mem/$MOOPS_CLAUDE_MEM_RUN_ID"
+  STORE_ID=$MOOPS_CLAUDE_MEM_RUN_ID
+fi
+
+STORE_MARKER="$CLAUDE_MEM_DATA_DIR/.moops-arm-d-store"
+
+export CLAUDE_MEM_DATA_DIR
+export CLAUDE_MEM_WORKER_HOST=127.0.0.1
+export CLAUDE_MEM_WORKER_PORT=37977
+export CLAUDE_MEM_RUNTIME=worker
+export CLAUDE_MEM_QUEUE_ENGINE=sqlite
+export CLAUDE_MEM_MODEL=claude-haiku-4-5-20251001
+export CLAUDE_CODE_PATH=
+export CLAUDE_MEM_MODE=code
+export CLAUDE_MEM_MODES_DIR=
+export CLAUDE_MEM_EXCLUDED_PROJECTS=
+export CLAUDE_MEM_SEMANTIC_INJECT=false
+export CLAUDE_MEM_SKIP_TOOLS=ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion
+export CLAUDE_MEM_TIER_ROUTING_ENABLED=false
+export CLAUDE_MEM_TIER_SIMPLE_MODEL=$CLAUDE_MEM_MODEL
+export CLAUDE_MEM_TIER_SUMMARY_MODEL=$CLAUDE_MEM_MODEL
+export CLAUDE_MEM_TIER_FAST_MODEL=$CLAUDE_MEM_MODEL
+export CLAUDE_MEM_TIER_SMART_MODEL=$CLAUDE_MEM_MODEL
+export CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH="$CLAUDE_MEM_DATA_DIR/transcript-watch.json"
+export CLAUDE_MEM_PROVIDER=claude
+export CLAUDE_MEM_CLAUDE_AUTH_METHOD=subscription
+export CLAUDE_MEM_TRANSCRIPTS_ENABLED=false
+export CLAUDE_MEM_CODEX_TRANSCRIPT_INGESTION=false
+export DO_NOT_TRACK=1
+export CLAUDE_MEM_TELEMETRY=0
+export CLAUDE_MEM_TELEMETRY_ERRORS=0
+export CLAUDE_MEM_CHROMA_ENABLED=false
+export CLAUDE_MEM_CLOUD_SYNC_TOKEN=
+export CLAUDE_MEM_CLOUD_SYNC_USER_ID=
+export CLAUDE_MEM_CLOUD_SYNC_HUB_URL=
+export CLAUDE_MEM_TELEGRAM_ENABLED=false
+
+if [ "${1:-}" = "--print-environment" ]; then
+  node -e 'process.stdout.write(JSON.stringify({CLAUDE_CODE_PATH:process.env.CLAUDE_CODE_PATH,CLAUDE_MEM_CHROMA_ENABLED:process.env.CLAUDE_MEM_CHROMA_ENABLED,CLAUDE_MEM_CLAUDE_AUTH_METHOD:process.env.CLAUDE_MEM_CLAUDE_AUTH_METHOD,CLAUDE_MEM_CLOUD_SYNC_HUB_URL:process.env.CLAUDE_MEM_CLOUD_SYNC_HUB_URL,CLAUDE_MEM_CLOUD_SYNC_TOKEN:process.env.CLAUDE_MEM_CLOUD_SYNC_TOKEN,CLAUDE_MEM_CLOUD_SYNC_USER_ID:process.env.CLAUDE_MEM_CLOUD_SYNC_USER_ID,CLAUDE_MEM_CODEX_TRANSCRIPT_INGESTION:process.env.CLAUDE_MEM_CODEX_TRANSCRIPT_INGESTION,CLAUDE_MEM_DATA_DIR:process.env.CLAUDE_MEM_DATA_DIR,CLAUDE_MEM_EXCLUDED_PROJECTS:process.env.CLAUDE_MEM_EXCLUDED_PROJECTS,CLAUDE_MEM_MODEL:process.env.CLAUDE_MEM_MODEL,CLAUDE_MEM_MODE:process.env.CLAUDE_MEM_MODE,CLAUDE_MEM_PROVIDER:process.env.CLAUDE_MEM_PROVIDER,CLAUDE_MEM_QUEUE_ENGINE:process.env.CLAUDE_MEM_QUEUE_ENGINE,CLAUDE_MEM_RUNTIME:process.env.CLAUDE_MEM_RUNTIME,CLAUDE_MEM_SEMANTIC_INJECT:process.env.CLAUDE_MEM_SEMANTIC_INJECT,CLAUDE_MEM_SKIP_TOOLS:process.env.CLAUDE_MEM_SKIP_TOOLS,CLAUDE_MEM_TELEGRAM_ENABLED:process.env.CLAUDE_MEM_TELEGRAM_ENABLED,CLAUDE_MEM_TELEMETRY:process.env.CLAUDE_MEM_TELEMETRY,CLAUDE_MEM_TELEMETRY_ERRORS:process.env.CLAUDE_MEM_TELEMETRY_ERRORS,CLAUDE_MEM_TIER_ROUTING_ENABLED:process.env.CLAUDE_MEM_TIER_ROUTING_ENABLED,CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH:process.env.CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH,CLAUDE_MEM_TRANSCRIPTS_ENABLED:process.env.CLAUDE_MEM_TRANSCRIPTS_ENABLED,CLAUDE_MEM_WORKER_HOST:process.env.CLAUDE_MEM_WORKER_HOST,CLAUDE_MEM_WORKER_PORT:process.env.CLAUDE_MEM_WORKER_PORT,DO_NOT_TRACK:process.env.DO_NOT_TRACK})+"\n")'
+  exit 0
+fi
+
+check_worker_port_unused() {
+  if ! command -v lsof >/dev/null 2>&1; then
+    echo "run-arm-d: lsof is required to check worker port 37977" >&2
+    exit 1
+  fi
+  if lsof -nP -iTCP:37977 -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "run-arm-d: arm D requires unused worker port 37977" >&2
+    exit 1
+  fi
+}
+
+check_plugin() {
+  if ! command -v codex >/dev/null 2>&1; then
+    echo "run-arm-d: codex is not on PATH" >&2
+    exit 127
+  fi
+
+  if ! PLUGIN_OUTPUT=$(codex plugin list 2>&1); then
+    echo "run-arm-d: could not inspect Codex plugins" >&2
+    printf '%s\n' "$PLUGIN_OUTPUT" >&2
+    exit 1
+  fi
+
+  if ! printf '%s\n' "$PLUGIN_OUTPUT" | awk '
+    $1 == "claude-mem@claude-mem-local" &&
+    $2 == "installed," &&
+    $3 == "enabled" &&
+    $4 == "13.15.3" { found = 1 }
+    END { exit found ? 0 : 1 }
+  '; then
+    echo "run-arm-d: arm D requires enabled claude-mem 13.15.3" >&2
+    exit 1
+  fi
+}
+
+require_store() {
+  if [ ! -d "$CLAUDE_MEM_DATA_DIR" ] || [ ! -f "$STORE_MARKER" ]; then
+    echo "run-arm-d: arm D store is not initialized; run --doctor-fresh first" >&2
+    exit 1
+  fi
+  MARKER_VALUE=$(sed -n '1p' "$STORE_MARKER")
+  if [ "$MARKER_VALUE" != "$STORE_ID" ]; then
+    echo "run-arm-d: arm D store identity marker does not match this run" >&2
+    exit 1
+  fi
+}
+
+if [ "${1:-}" = "--doctor-fresh" ] && [ -e "$CLAUDE_MEM_DATA_DIR" ]; then
+  echo "run-arm-d: --doctor-fresh requires a fresh memory directory: $CLAUDE_MEM_DATA_DIR" >&2
+  exit 1
+fi
+
+node "$SCRIPT_DIR/registry.mjs" >/dev/null
+check_plugin
+check_worker_port_unused
+
+if [ "${1:-}" = "--doctor-fresh" ]; then
+  STORE_PARENT=$(dirname -- "$CLAUDE_MEM_DATA_DIR")
+  mkdir -p "$STORE_PARENT"
+  if ! mkdir "$CLAUDE_MEM_DATA_DIR"; then
+    echo "run-arm-d: could not atomically claim fresh memory directory: $CLAUDE_MEM_DATA_DIR" >&2
+    exit 1
+  fi
+  printf '%s\n' "$STORE_ID" > "$STORE_MARKER"
+  printf '%s\n' '{"claudeMemEnabled":true,"claudeMemVersion":"13.15.3","ok":true}'
+  exit 0
+fi
+
+require_store
+
+if [ "${1:-}" = "--doctor" ]; then
+  printf '%s\n' '{"claudeMemEnabled":true,"claudeMemVersion":"13.15.3","ok":true}'
+  exit 0
+fi
+
+set +e
+codex "$@"
+CODEX_STATUS=$?
+set -e
+
+if ! node "$SCRIPT_DIR/worker-lifecycle.mjs" --verify-and-shutdown; then
+  echo "run-arm-d: could not verify and stop this run's Claude-Mem worker" >&2
+  exit 1
+fi
+
+exit "$CODEX_STATUS"
