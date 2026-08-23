@@ -9,6 +9,6 @@ source. It has no external assets or generated imagery.
 To update it:
 
 1. Open `moops-loop.drawio` in diagrams.net.
-2. Keep the page at 1240 × 760.
-3. Export as SVG with a transparent background and embedded font disabled.
+2. Keep the page at 1360 × 1100.
+3. Export as SVG with the off-white page background and embedded font disabled.
 4. Preserve the SVG title and description for accessibility.

@@ -48,10 +48,12 @@ edit → build → restore the last verified real-app state → inspect → veri
 > InjectionIII keeps state by avoiding a rebuild. MOOPS restores useful state
 > when the rebuild is unavoidable.
 
-![MOOPS mobile verification loop](docs/moops-loop.svg)
+![Implemented MOOPS architecture and iOS state model](docs/moops-loop.svg)
 
 The editable Draw.io source is
 [`docs/moops-loop.drawio`](docs/moops-loop.drawio).
+The diagram shows the implemented control and state planes. The real app and
+backend own state; Claude-Mem only indexes checkpoint descriptors.
 
 ## Impact: cheaper real iOS reinforcement
 

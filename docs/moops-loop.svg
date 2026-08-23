@@ -1,87 +1,260 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="800" viewBox="0 0 1240 800" role="img" aria-labelledby="title desc">
-  <title id="title">MOOPS live 2 by 2 mobile verification loop</title>
-  <desc id="desc">One external Codex Goal makes a structural iOS edit using the official Xcode MCP. Four isolated simulators are shown in a two by two live recording. UI automation is top left, Previews top right, InjectionIII bottom left, and MOOPS plus Claude-Mem bottom right. Every simulator shows the same timer. All arms must pass the same real-app and backend acceptance.</desc>
-  <style>
-    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .title { font-size: 24px; font-weight: 700; fill: #172b4d; }
-    .subtitle { font-size: 13px; fill: #52637a; }
-    .box-title { font-size: 14px; font-weight: 700; }
-    .box-sub { font-size: 11px; }
-    .card-title { font-size: 13px; font-weight: 700; }
-    .card-copy { font-size: 12px; }
-    .timer { font-size: 12px; font-weight: 700; fill: white; letter-spacing: .5px; }
-  </style>
-  <rect width="1240" height="800" fill="#ffffff"/>
-  <text x="40" y="49" class="title">MOOPS keeps the mobile verification loop warm</text>
-  <text x="40" y="75" class="subtitle">One external Goal. One synchronized clock. Four isolated feedback paths. One real-app finish line.</text>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1100" viewBox="0 0 1360 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Implemented MOOPS architecture and iOS state model</title>
+  <desc id="desc">Technical architecture showing an external Codex Goal invoking the Node.js MOOPS CLI, validation of a versioned JSON checkpoint, Xcode build, CoreSimulator install without uninstall, launch, XCUITest public accessibility replay, durable and ephemeral iOS state boundaries, a deterministic Node HTTP backend, optional Claude-Mem descriptor lookup, and machine-readable evidence returned to the Goal.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+  <rect width="1360" height="1100" fill="#f8fafc"/>
 
-  <line x1="250" y1="132" x2="330" y2="132" stroke="#52637a" stroke-width="2"/>
-  <polygon points="330,132 321,127 321,137" fill="#52637a"/>
-  <line x1="540" y1="132" x2="620" y2="132" stroke="#52637a" stroke-width="2"/>
-  <polygon points="620,132 611,127 611,137" fill="#52637a"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="48" y="56" font-size="26" font-weight="700" fill="#0f172a">IMPLEMENTED MOOPS ARCHITECTURE / STATE MODEL</text>
+    <text x="48" y="84" font-size="14" fill="#475569">Node.js host: tools/moops/moops · checkpoint | doctor | verify | build-and-restore</text>
+    <rect x="48" y="101" width="860" height="30" rx="15" fill="#e2e8f0"/>
+    <text x="478" y="121" text-anchor="middle" font-size="12" font-weight="700" fill="#334155">define + verify checkpoint → agent edit → build-and-restore CHECKPOINT → JSON evidence → Goal continues</text>
+    <rect x="48" y="150" width="128" height="24" rx="12" fill="#dbeafe"/>
+    <text x="112" y="166" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".7" fill="#1e40af">CONTROL PLANE</text>
 
-  <rect x="40" y="100" width="210" height="64" rx="10" fill="#172b4d"/>
-  <text x="145" y="126" text-anchor="middle" class="box-title" fill="white">External Codex Goal</text>
-  <text x="145" y="146" text-anchor="middle" class="box-sub" fill="white">edit · observe · correct</text>
-  <rect x="330" y="100" width="210" height="64" rx="10" fill="#e8f1ff" stroke="#4c78a8"/>
-  <text x="435" y="126" text-anchor="middle" class="box-title" fill="#17375e">Structural iOS edit</text>
-  <text x="435" y="146" text-anchor="middle" class="box-sub" fill="#17375e">new file + stored state</text>
-  <rect x="620" y="100" width="250" height="64" rx="10" fill="#e7f5f7" stroke="#0b7a8f"/>
-  <text x="745" y="126" text-anchor="middle" class="box-title" fill="#164a55">Official Xcode MCP + build</text>
-  <text x="745" y="146" text-anchor="middle" class="box-sub" fill="#164a55">/usr/bin/xcrun mcpbridge</text>
-  <rect x="950" y="110" width="250" height="44" rx="9" fill="#f8fafc" stroke="#cbd5e1"/>
-  <text x="1075" y="137" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">Common to all four arms</text>
+    <!-- Control-plane cards -->
+    <g filter="url(#shadow)">
+      <rect x="48" y="184" width="210" height="160" rx="12" fill="#0f172a"/>
+      <rect x="292" y="170" width="248" height="194" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+      <rect x="574" y="158" width="280" height="218" rx="12" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+      <rect x="894" y="150" width="418" height="226" rx="12" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    </g>
 
-  <text x="620" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#52637a">LIVE RECORDING · EXACT 2 × 2 SIMULATOR LAYOUT · SYNCHRONIZED VISIBLE TIMER</text>
+    <text x="64" y="213" font-size="13" font-weight="700" fill="#ffffff">EXTERNAL CODEX GOAL</text>
+    <text x="64" y="244" font-size="12.5" fill="#ffffff">
+      <tspan x="64" dy="0">Edits the app, invokes MOOPS,</tspan>
+      <tspan x="64" dy="19">consumes evidence, and owns</tspan>
+      <tspan x="64" dy="19">the repeat loop.</tspan>
+      <tspan x="64" dy="30" fill="#cbd5e1">No LLM runs inside MOOPS.</tspan>
+    </text>
 
-  <rect x="40" y="225" width="560" height="140" rx="10" fill="#f3f7fc" stroke="#4c78a8" stroke-width="2"/>
-  <rect x="40" y="225" width="560" height="42" rx="9" fill="#4c78a8"/>
-  <rect x="40" y="251" width="560" height="16" fill="#4c78a8"/>
-  <text x="56" y="251" class="card-title" fill="white">TOP LEFT · CODEX + UITEST</text>
-  <rect x="480" y="232" width="100" height="28" rx="14" fill="#315d8a"/>
-  <text x="530" y="251" text-anchor="middle" class="timer">00:00:00</text>
-  <text x="64" y="302" class="card-copy" fill="#30465e">Build + launch</text>
-  <text x="64" y="327" class="card-copy" fill="#30465e">Reconstruct preconditions → navigate → inspect</text>
+    <text x="308" y="198" font-size="13" font-weight="700" fill="#1e3a8a">MOOPS CLI / API · Node.js</text>
+    <text x="308" y="219" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#1d4ed8">tools/moops/moops</text>
+    <text x="308" y="246" font-size="11.5" fill="#1e3a8a">
+      <tspan x="308" dy="0">• checkpoint · schema + fingerprint</tspan>
+      <tspan x="308" dy="19">• doctor · adapter admission</tspan>
+      <tspan x="308" dy="19">• verify · fresh inspect + landing</tspan>
+      <tspan x="308" dy="19">• build-and-restore · full pipeline</tspan>
+      <tspan x="308" dy="25" font-weight="700">Direct argv; nonzero on failure.</tspan>
+    </text>
 
-  <rect x="640" y="225" width="560" height="140" rx="10" fill="#f5f1fb" stroke="#7562a8" stroke-width="2"/>
-  <rect x="640" y="225" width="560" height="42" rx="9" fill="#7562a8"/>
-  <rect x="640" y="251" width="560" height="16" fill="#7562a8"/>
-  <text x="656" y="251" class="card-title" fill="white">TOP RIGHT · CODEX + PREVIEWS</text>
-  <rect x="1080" y="232" width="100" height="28" rx="14" fill="#594782"/>
-  <text x="1130" y="251" text-anchor="middle" class="timer">00:00:00</text>
-  <text x="664" y="302" class="card-copy" fill="#4c416a">Construct faithful mock context → RenderPreview</text>
-  <text x="664" y="327" class="card-copy" fill="#4c416a">Real-app acceptance still required</text>
+    <text x="590" y="186" font-size="12.5" font-weight="700" fill="#78350f">VERSIONED CHECKPOINT REGISTRY · JSON</text>
+    <text x="590" y="207" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#b45309">benchmark/checkpoints/*.json</text>
+    <text x="590" y="234" font-size="11.5" fill="#78350f">
+      <tspan x="590" dy="0">schemaVersion + fixtureVersion</tspan>
+      <tspan x="590" dy="18">app / simulator identity</tspan>
+      <tspan x="590" dy="18">declared adapter argv</tspan>
+      <tspan x="590" dy="18">public trace: wait / tap</tspan>
+      <tspan x="590" dy="18">landing + durable preconditions</tspan>
+      <tspan x="590" dy="18">canonical SHA-256 fingerprint</tspan>
+      <tspan x="590" dy="23" font-weight="700">Descriptor + recipe; never a snapshot.</tspan>
+    </text>
 
-  <rect x="40" y="475" width="560" height="140" rx="10" fill="#fff4e8" stroke="#c56a14" stroke-width="2"/>
-  <rect x="40" y="475" width="560" height="42" rx="9" fill="#c56a14"/>
-  <rect x="40" y="501" width="560" height="16" fill="#c56a14"/>
-  <text x="56" y="501" class="card-title" fill="white">BOTTOM LEFT · CODEX + INJECTION</text>
-  <rect x="480" y="482" width="100" height="28" rx="14" fill="#9b4f09"/>
-  <text x="530" y="501" text-anchor="middle" class="timer">00:00:00</text>
-  <text x="64" y="552" class="card-copy" fill="#6e430f">Compatible method body → hot inject</text>
-  <text x="64" y="577" class="card-copy" fill="#6e430f">Structural edit → recorded normal-build fallback</text>
+    <text x="914" y="178" font-size="14" font-weight="700" fill="#0f172a">BUILD / RESTORE ENGINE · fixed order, fail closed</text>
+    <rect x="914" y="202" width="179" height="70" rx="9" fill="#dbeafe" stroke="#2563eb"/>
+    <rect x="1113" y="202" width="179" height="70" rx="9" fill="#eef2ff" stroke="#4f46e5"/>
+    <rect x="914" y="288" width="179" height="70" rx="9" fill="#eef2ff" stroke="#4f46e5"/>
+    <rect x="1113" y="288" width="179" height="70" rx="9" fill="#ecfeff" stroke="#0891b2"/>
+    <text x="926" y="222" font-size="11" font-weight="700" fill="#1e3a8a">1 · BUILD</text>
+    <text x="926" y="241" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#1e3a8a">xcrun xcodebuild</text>
+    <text x="926" y="258" font-size="10.5" fill="#1e3a8a">build-for-testing</text>
+    <text x="1125" y="222" font-size="11" font-weight="700" fill="#312e81">2 · INSTALL</text>
+    <text x="1125" y="241" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.3" fill="#312e81">CoreSimulator simctl</text>
+    <text x="1125" y="258" font-size="10.5" font-weight="700" fill="#312e81">install · NO uninstall</text>
+    <text x="926" y="308" font-size="11" font-weight="700" fill="#312e81">3 · LAUNCH</text>
+    <text x="926" y="327" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#312e81">simctl launch</text>
+    <text x="926" y="344" font-size="10.5" fill="#312e81">new app process</text>
+    <text x="1125" y="308" font-size="11" font-weight="700" fill="#164e63">4 · REPLAY + INSPECT</text>
+    <text x="1125" y="327" font-size="10.5" fill="#164e63">XCUITest · protocol v1</text>
+    <text x="1125" y="344" font-size="10.5" fill="#164e63">one test session</text>
 
-  <rect x="640" y="475" width="560" height="140" rx="10" fill="#eaf7f5" stroke="#168a7a" stroke-width="2"/>
-  <rect x="640" y="475" width="560" height="42" rx="9" fill="#168a7a"/>
-  <rect x="640" y="501" width="560" height="16" fill="#168a7a"/>
-  <text x="656" y="501" class="card-title" fill="white">BOTTOM RIGHT · CODEX + MOOPS + CLAUDEMEM</text>
-  <rect x="1080" y="482" width="100" height="28" rx="14" fill="#0f665b"/>
-  <text x="1130" y="501" text-anchor="middle" class="timer">00:00:00</text>
-  <text x="664" y="552" class="card-copy" fill="#235c55">Claude-Mem recalls checkpoint descriptor</text>
-  <text x="664" y="577" class="card-copy" fill="#235c55">Build → preserve durable app data → replay public route → fresh predicates</text>
+    <!-- Primary control arrows -->
+    <g stroke="#64748b" stroke-width="2" fill="none">
+      <line x1="258" y1="264" x2="284" y2="264"/>
+      <line x1="540" y1="264" x2="566" y2="264"/>
+      <line x1="854" y1="264" x2="886" y2="264"/>
+    </g>
+    <g fill="#64748b">
+      <polygon points="284,259 292,264 284,269"/>
+      <polygon points="566,259 574,264 566,269"/>
+      <polygon points="886,259 894,264 886,269"/>
+    </g>
+    <text x="271" y="254" text-anchor="middle" font-size="10" fill="#475569">invoke</text>
+    <text x="553" y="254" text-anchor="middle" font-size="10" fill="#475569">admit</text>
+    <text x="870" y="254" text-anchor="middle" font-size="10" fill="#475569">argv</text>
 
-  <line x1="320" y1="365" x2="320" y2="385" stroke="#4c78a8" stroke-width="2"/>
-  <line x1="920" y1="365" x2="920" y2="385" stroke="#7562a8" stroke-width="2"/>
-  <line x1="320" y1="475" x2="320" y2="455" stroke="#c56a14" stroke-width="2"/>
-  <line x1="920" y1="475" x2="920" y2="455" stroke="#168a7a" stroke-width="3"/>
-  <polygon points="320,385 315,376 325,376" fill="#4c78a8"/>
-  <polygon points="920,385 915,376 925,376" fill="#7562a8"/>
-  <polygon points="320,455 315,464 325,464" fill="#c56a14"/>
-  <polygon points="920,455 915,464 925,464" fill="#168a7a"/>
-  <rect x="250" y="385" width="740" height="70" rx="10" fill="#e9f6ec" stroke="#2e7d32" stroke-width="2"/>
-  <text x="620" y="413" text-anchor="middle" class="box-title" fill="#1d5722">SAME REAL-APP ACCEPTANCE</text>
-  <text x="620" y="435" text-anchor="middle" class="box-sub" fill="#1d5722">fresh UI hierarchy + isolated backend receipt + exact run ID</text>
+    <!-- Fixed workflow arrows within engine -->
+    <g stroke="#64748b" stroke-width="1.7" fill="none">
+      <line x1="1093" y1="237" x2="1105" y2="237"/>
+      <line x1="1202" y1="272" x2="1202" y2="280"/>
+      <line x1="1202" y1="280" x2="1003" y2="280"/>
+      <line x1="1003" y1="280" x2="1003" y2="280"/>
+      <line x1="1093" y1="323" x2="1105" y2="323"/>
+    </g>
+    <polygon points="1105,232 1113,237 1105,242" fill="#64748b"/>
+    <polygon points="997,280 1003,288 1009,280" fill="#64748b"/>
+    <polygon points="1105,318 1113,323 1105,328" fill="#64748b"/>
 
-  <rect x="40" y="720" width="1160" height="42" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
-  <text x="620" y="746" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">Only this shared finish line can turn the actual app green and complete the Goal.</text>
+    <!-- External Xcode interface and adopter inputs -->
+    <rect x="48" y="374" width="210" height="86" rx="10" fill="#ffffff" stroke="#60a5fa" stroke-dasharray="6 4"/>
+    <text x="62" y="397" font-size="11" font-weight="700" fill="#1e3a8a">OFFICIAL XCODE MCP</text>
+    <text x="62" y="417" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5" fill="#2563eb">/usr/bin/xcrun mcpbridge</text>
+    <text x="62" y="435" font-size="10.5" fill="#1e3a8a">External Codex ↔ Xcode project</text>
+    <text x="62" y="451" font-size="10.5" fill="#64748b">outside the MOOPS host</text>
+    <g stroke="#60a5fa" stroke-width="2" stroke-dasharray="6 4" fill="none">
+      <line x1="153" y1="344" x2="153" y2="366"/>
+    </g>
+    <polygon points="147,366 153,374 159,366" fill="#60a5fa"/>
+    <polygon points="147,352 153,344 159,352" fill="#60a5fa"/>
+
+    <rect x="292" y="394" width="248" height="76" rx="10" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="306" y="416" font-size="11" font-weight="700" fill="#334155">ADOPTER INPUT</text>
+    <text x="306" y="435" font-size="10.5" fill="#334155">iOS / Xcode project + booted simulator</text>
+    <text x="306" y="452" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" fill="#475569">MOOPS_SIMULATOR_UDID · MOOPS_DERIVED_DATA</text>
+
+    <rect x="574" y="394" width="280" height="76" rx="10" fill="#fff7ed" stroke="#fdba74"/>
+    <text x="590" y="418" font-size="10.5" font-weight="700" fill="#9a3412">FAIL-CLOSED ADMISSION</text>
+    <text x="590" y="438" font-size="10.5" fill="#9a3412">schema · fingerprint · env · adapter · predicate</text>
+    <text x="590" y="456" font-size="10.5" fill="#9a3412">failure → stable code in JSON report</text>
+
+    <rect x="894" y="394" width="418" height="76" rx="10" fill="#ecfeff" stroke="#22d3ee"/>
+    <text x="910" y="416" font-size="11" font-weight="700" fill="#164e63">APP-SPECIFIC UI ADAPTER · EXTENSION POINT</text>
+    <text x="910" y="436" font-size="10.5" fill="#164e63">Protocol-v1 trace + selectors in → one public accessibility observation out.</text>
+    <text x="910" y="455" font-size="10.5" fill="#0e7490">Checked-in FoodDelivery XCUITest adapter exercises the complete path.</text>
+    <g stroke-width="1.8" fill="none">
+      <line x1="540" y1="432" x2="562" y2="432" stroke="#94a3b8"/>
+      <line x1="562" y1="432" x2="562" y2="384" stroke="#94a3b8"/>
+      <line x1="562" y1="384" x2="1003" y2="384" stroke="#94a3b8"/>
+      <line x1="1003" y1="384" x2="1003" y2="366" stroke="#94a3b8"/>
+      <line x1="1202" y1="394" x2="1202" y2="366" stroke="#0891b2"/>
+    </g>
+    <polygon points="997,366 1003,358 1009,366" fill="#94a3b8"/>
+    <polygon points="1196,366 1202,358 1208,366" fill="#0891b2"/>
+
+    <!-- State ownership plane -->
+    <rect x="48" y="496" width="178" height="24" rx="12" fill="#dcfce7"/>
+    <text x="137" y="512" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".6" fill="#166534">STATE PLANE / OWNERSHIP</text>
+    <rect x="48" y="530" width="842" height="286" rx="13" fill="#f0fdf4" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+    <text x="74" y="568" font-size="17" font-weight="700" fill="#065f46">REAL iOS APP · Swift / SwiftUI · simulator app data container</text>
+
+    <rect x="74" y="590" width="368" height="194" rx="10" fill="#ffffff" stroke="#4ade80"/>
+    <text x="92" y="618" font-size="12" font-weight="700" fill="#14532d">SURVIVES REBUILD</text>
+    <text x="92" y="639" font-size="11" fill="#047857">simctl install preserves the container because it never uninstalls</text>
+    <text x="92" y="670" font-size="12" fill="#14532d">
+      <tspan x="92" dy="0">• authenticated session / app container</tspan>
+      <tspan x="92" dy="22">• Core Data cart</tspan>
+      <tspan x="92" dy="22">• UserDefaults delivery preference</tspan>
+      <tspan x="92" dy="30" font-weight="700" fill="#047857">Validated, never copied by MOOPS.</tspan>
+    </text>
+
+    <rect x="470" y="590" width="394" height="194" rx="10" fill="#fffbeb" stroke="#f59e0b"/>
+    <text x="488" y="618" font-size="12" font-weight="700" fill="#78350f">DESTROYED / RECREATED ON LAUNCH</text>
+    <text x="488" y="639" font-size="11" fill="#b45309">new process · no process-memory checkpoint</text>
+    <text x="488" y="670" font-size="12" fill="#78350f">
+      <tspan x="488" dy="0">• SwiftUI view objects</tspan>
+      <tspan x="488" dy="22">• view-model memory</tspan>
+      <tspan x="488" dy="22">• live NavigationStack / path</tspan>
+      <tspan x="488" dy="30" font-weight="700" fill="#b45309">Navigation returns only through public XCUITest replay.</tspan>
+    </text>
+
+    <rect x="930" y="548" width="382" height="236" rx="13" fill="#fff7ed" stroke="#ea580c" stroke-width="2" filter="url(#shadow)"/>
+    <text x="950" y="578" font-size="12" font-weight="700" fill="#7c2d12">EXTERNAL STATE OWNER</text>
+    <text x="950" y="601" font-size="12" font-weight="700" fill="#9a3412">Deterministic local Node.js HTTP backend</text>
+    <text x="950" y="635" font-size="12" fill="#7c2d12">
+      <tspan x="950" dy="0">GET catalog + prices</tspan>
+      <tspan x="950" dy="22">POST /orders</tspan>
+      <tspan x="950" dy="22">independent order receipt</tspan>
+      <tspan x="950" dy="31">Separate process / truth boundary.</tspan>
+      <tspan x="950" dy="20" font-weight="700" fill="#c2410c">Never copied into a checkpoint.</tspan>
+    </text>
+
+    <!-- Explicit state transition arrows -->
+    <g stroke-width="2" fill="none">
+      <line x1="1202" y1="272" x2="1328" y2="272" stroke="#4f46e5"/>
+      <line x1="1328" y1="272" x2="1328" y2="486" stroke="#4f46e5"/>
+      <line x1="1328" y1="486" x2="258" y2="486" stroke="#4f46e5"/>
+      <line x1="258" y1="486" x2="258" y2="582" stroke="#4f46e5"/>
+      <line x1="1003" y1="358" x2="1003" y2="478" stroke="#d97706"/>
+      <line x1="1003" y1="478" x2="667" y2="478" stroke="#d97706"/>
+      <line x1="667" y1="478" x2="667" y2="582" stroke="#d97706"/>
+      <line x1="1202" y1="358" x2="1202" y2="500" stroke="#0891b2"/>
+      <line x1="1202" y1="500" x2="844" y2="500" stroke="#0891b2"/>
+      <line x1="844" y1="500" x2="844" y2="582" stroke="#0891b2"/>
+    </g>
+    <polygon points="252,582 258,590 264,582" fill="#4f46e5"/>
+    <polygon points="661,582 667,590 673,582" fill="#d97706"/>
+    <polygon points="838,582 844,590 850,582" fill="#0891b2"/>
+    <rect x="276" y="476" width="160" height="20" rx="10" fill="#f8fafc"/>
+    <text x="356" y="490" text-anchor="middle" font-size="10" font-weight="700" fill="#4338ca">install · preserve container</text>
+    <rect x="680" y="468" width="112" height="20" rx="10" fill="#f8fafc"/>
+    <text x="736" y="482" text-anchor="middle" font-size="10" font-weight="700" fill="#b45309">launch · recreate</text>
+    <rect x="850" y="490" width="153" height="20" rx="10" fill="#f8fafc"/>
+    <text x="926" y="504" text-anchor="middle" font-size="10" font-weight="700" fill="#0e7490">replay · reconstruct route</text>
+
+    <!-- HTTP state boundary -->
+    <g stroke="#ea580c" stroke-width="2" fill="none">
+      <line x1="890" y1="648" x2="922" y2="648"/>
+      <line x1="890" y1="672" x2="922" y2="672"/>
+    </g>
+    <polygon points="922,643 930,648 922,653" fill="#ea580c"/>
+    <polygon points="898,667 890,672 898,677" fill="#ea580c"/>
+    <text x="910" y="638" text-anchor="middle" font-size="10" font-weight="700" fill="#c2410c">HTTP</text>
+
+    <!-- Optional memory and evidence -->
+    <rect x="48" y="854" width="410" height="190" rx="13" fill="#faf5ff" stroke="#9333ea" stroke-width="2" filter="url(#shadow)"/>
+    <text x="66" y="882" font-size="12" font-weight="700" fill="#581c87">OPTIONAL MEMORY-PROVIDER SIDECAR</text>
+    <text x="66" y="905" font-size="12" font-weight="700" fill="#7e22ce">Claude-Mem · local SQLite</text>
+    <text x="66" y="934" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#6b21a8">search → timeline → get_observations</text>
+    <text x="66" y="959" font-size="11.5" fill="#581c87">returns checkpoint name / path / fingerprint</text>
+    <text x="66" y="984" font-size="11.5" font-weight="700" fill="#7e22ce">Selects a descriptor only.</text>
+    <text x="66" y="1005" font-size="11" fill="#581c87">Never restores or verifies state; the JSON gate still decides.</text>
+
+    <rect x="500" y="844" width="812" height="200" rx="13" fill="#ecfdf5" stroke="#16a34a" stroke-width="3" filter="url(#shadow)"/>
+    <text x="520" y="873" font-size="13" font-weight="700" fill="#14532d">MACHINE-READABLE EVIDENCE TO EXTERNAL GOAL</text>
+    <text x="520" y="903" font-size="11.5" font-weight="700" fill="#14532d">MOOPS JSON report</text>
+    <text x="520" y="924" font-size="11.5" fill="#14532d">checkpoint name + fingerprint · phase result · fresh accessibility landing result</text>
+    <text x="520" y="944" font-size="11.5" fill="#14532d">elapsedMs · stable failure code</text>
+    <text x="520" y="973" font-size="11.5" font-weight="700" fill="#14532d">Independent application evidence</text>
+    <text x="520" y="994" font-size="11.5" fill="#14532d">the local HTTP backend retains its POST receipt outside MOOPS</text>
+    <text x="520" y="1022" font-size="11.5" font-weight="700" fill="#166534">Verified observation → Goal continues · failure → exact failed phase returns to Goal</text>
+
+    <!-- State/evidence inputs -->
+    <g stroke-width="2" fill="none">
+      <line x1="667" y1="784" x2="667" y2="836" stroke="#16a34a"/>
+      <line x1="1121" y1="784" x2="1121" y2="836" stroke="#ea580c"/>
+    </g>
+    <polygon points="661,836 667,844 673,836" fill="#16a34a"/>
+    <polygon points="1115,836 1121,844 1127,836" fill="#ea580c"/>
+    <text x="680" y="823" font-size="10" font-weight="700" fill="#15803d">fresh accessibility observation</text>
+    <text x="1134" y="823" font-size="10" font-weight="700" fill="#c2410c">POST receipt</text>
+
+    <!-- Optional descriptor lookup -->
+    <g stroke="#9333ea" stroke-width="2" stroke-dasharray="7 5" fill="none">
+      <line x1="458" y1="900" x2="480" y2="900"/>
+      <line x1="480" y1="900" x2="480" y2="352"/>
+      <line x1="480" y1="352" x2="566" y2="352"/>
+    </g>
+    <polygon points="566,347 574,352 566,357" fill="#9333ea"/>
+    <rect x="467" y="799" width="156" height="21" rx="10" fill="#f8fafc"/>
+    <text x="545" y="813" text-anchor="middle" font-size="10" font-weight="700" fill="#7e22ce">optional descriptor lookup</text>
+
+    <!-- Evidence closes the external Goal loop -->
+    <g stroke="#16a34a" stroke-width="3" stroke-dasharray="9 6" fill="none">
+      <line x1="500" y1="1028" x2="485" y2="1028"/>
+      <line x1="485" y1="1028" x2="485" y2="1072"/>
+      <line x1="485" y1="1072" x2="20" y2="1072"/>
+      <line x1="20" y1="1072" x2="20" y2="264"/>
+      <line x1="20" y1="264" x2="40" y2="264"/>
+    </g>
+    <polygon points="40,258 48,264 40,270" fill="#16a34a"/>
+    <g transform="translate(19 691) rotate(-90)">
+      <rect x="-49" y="-13" width="98" height="26" rx="13" fill="#dcfce7" stroke="#16a34a"/>
+      <text x="0" y="4" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".8" fill="#166534">GOAL LOOP</text>
+    </g>
+  </g>
 </svg>
