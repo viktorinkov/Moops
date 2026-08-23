@@ -137,6 +137,22 @@ test("tileSimulatorWindows fails closed when an expected window is missing", asy
   );
 });
 
+test("tileSimulatorWindows ignores unrelated Simulator windows outside the four titled targets", async () => {
+  const probe = successfulProbe();
+  probe.discoveredWindows.push({
+    title: "Personal iPhone",
+    processId: 999,
+    windowIndex: 1,
+    frame: { x: 2000, y: 0, width: 400, height: 800 },
+  });
+  const receipt = await tileSimulatorWindows(
+    { region: REGION, titles: TITLES },
+    { execute: fakeExecutor(probe).execute },
+  );
+  assert.equal(receipt.ok, true);
+  assert.equal(receipt.assignments.length, 4);
+});
+
 test("tileSimulatorWindows fails closed when a title is duplicated", async () => {
   const probe = successfulProbe();
   probe.discoveredWindows[3].title = probe.discoveredWindows[2].title;

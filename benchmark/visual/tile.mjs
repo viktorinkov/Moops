@@ -176,19 +176,20 @@ function validateProbe(probe, assignments) {
       discoveredWindows: probe.discoveredWindows ?? null,
     });
   }
-  if (!Array.isArray(probe.discoveredWindows) || probe.discoveredWindows.length !== assignments.length) {
-    fail("E_VISUAL_WINDOW_SET", "exactly four Simulator windows must be visible", {
+  if (!Array.isArray(probe.discoveredWindows)) {
+    fail("E_VISUAL_WINDOW_SET", "Simulator window discovery did not return an array", {
       count: Array.isArray(probe.discoveredWindows) ? probe.discoveredWindows.length : null,
     });
   }
 
   const expectedTitles = new Set(assignments.map(({ title }) => title));
-  const actualTitles = probe.discoveredWindows.map(({ title }) => title);
-  const identities = probe.discoveredWindows.map(({ processId, windowIndex }) => `${processId}:${windowIndex}`);
+  const targetWindows = probe.discoveredWindows.filter(({ title }) => expectedTitles.has(title));
+  const actualTitles = targetWindows.map(({ title }) => title);
+  const identities = targetWindows.map(({ processId, windowIndex }) => `${processId}:${windowIndex}`);
   if (
-    new Set(actualTitles).size !== assignments.length
+    targetWindows.length !== assignments.length
+    || new Set(actualTitles).size !== assignments.length
     || new Set(identities).size !== assignments.length
-    || actualTitles.some((title) => !expectedTitles.has(title))
   ) {
     fail("E_VISUAL_WINDOW_SET", "Simulator windows must uniquely and exactly match the four configured titles", {
       expectedTitles: [...expectedTitles],
@@ -197,7 +198,7 @@ function validateProbe(probe, assignments) {
   }
 
   return assignments.map((assignment) => {
-    const window = probe.discoveredWindows.find(({ title }) => title === assignment.title);
+    const window = targetWindows.find(({ title }) => title === assignment.title);
     if (!window || !isIntegerFrame(window.frame)) {
       fail("E_VISUAL_RECEIPT", `${assignment.arm} returned an invalid window frame`);
     }

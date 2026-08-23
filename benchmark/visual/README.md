@@ -12,8 +12,9 @@ one fixed layout:
 
 It has no `1x4` mode. The desktop region must have even dimensions so every
 cell is exactly equal. Before returning success, it rereads all window titles
-and frames through Accessibility and rejects missing, extra, duplicate, or
-mismatched windows—including a one-pixel frame difference.
+and frames through Accessibility and rejects missing, duplicate, or mismatched
+target windows—including a one-pixel frame difference. Unrelated Simulator
+windows with other titles are left alone and ignored.
 
 ## Live runner invocation
 
@@ -23,10 +24,10 @@ titles and the recording region:
 ```sh
 node benchmark/visual/tile-simulators.mjs \
   --x 0 --y 0 --width 1920 --height 1080 \
-  --a-title "MOOPS A — CODEX + UITEST" \
-  --b-title "MOOPS B — CODEX + PREVIEWS" \
-  --c-title "MOOPS C — CODEX + INJECTION" \
-  --d-title "MOOPS D — CODEX + MOOPS + CLAUDEMEM" \
+  --a-title "MOOPS A UITEST" \
+  --b-title "MOOPS B PREVIEWS" \
+  --c-title "MOOPS C INJECTION" \
+  --d-title "MOOPS D MEMORY" \
   --output /absolute/run/results/simulator-layout.json
 ```
 

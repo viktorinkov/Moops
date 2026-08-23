@@ -1,0 +1,135 @@
+#!/usr/bin/env node
+
+import { createHash } from "node:crypto";
+import { readFile, stat } from "node:fs/promises";
+import { join, resolve } from "node:path";
+
+import { buildCleanupPlan } from "./src/cleanup.mjs";
+import { loadManifest } from "./src/config.mjs";
+import { buildGoalObjective } from "./src/codex-goal.mjs";
+import { runLiveDemo } from "./src/demo.mjs";
+import { runBenchmark } from "./src/run.mjs";
+import { runShowcase } from "./src/showcase.mjs";
+
+class CLIError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "CLIError";
+    this.code = code;
+  }
+}
+
+function parse(argv) {
+  const [command, manifestArgument, ...rest] = argv;
+  if (!["validate", "run", "demo", "showcase", "cleanup-plan"].includes(command)) {
+    throw new CLIError("E_BAD_COMMAND", "expected validate, run, demo, showcase, or cleanup-plan");
+  }
+  if (!manifestArgument || manifestArgument.startsWith("--")) {
+    throw new CLIError("E_BAD_ARGS", "a manifest path is required");
+  }
+  const options = { command, manifestPath: resolve(manifestArgument) };
+  for (let index = 0; index < rest.length; index += 1) {
+    const argument = rest[index];
+    if (argument === "--dry-run") {
+      if (options.dryRun) throw new CLIError("E_BAD_ARGS", "--dry-run was repeated");
+      options.dryRun = true;
+      continue;
+    }
+    const valued = new Set(["--run-id", "--summary", "--recording-seconds"]);
+    if (!valued.has(argument) || index + 1 >= rest.length) {
+      throw new CLIError("E_BAD_ARGS", `unsupported or incomplete option ${argument}`);
+    }
+    const value = rest[index + 1];
+    index += 1;
+    if (argument === "--run-id") options.runId = value;
+    if (argument === "--summary") options.summaryPath = resolve(value);
+    if (argument === "--recording-seconds") options.recordingSeconds = Number(value);
+  }
+  if (["cleanup-plan", "showcase"].includes(command) && !options.runId && !options.summaryPath) {
+    throw new CLIError("E_BAD_ARGS", `${command} requires --run-id or --summary`);
+  }
+  if (command === "demo" && !options.runId) {
+    throw new CLIError("E_BAD_ARGS", "demo requires --run-id");
+  }
+  if (!["demo", "showcase"].includes(command) && options.dryRun) {
+    throw new CLIError("E_BAD_ARGS", "--dry-run is valid only for demo or showcase");
+  }
+  if (command !== "showcase" && options.recordingSeconds !== undefined) {
+    throw new CLIError("E_BAD_ARGS", "--recording-seconds is valid only for showcase");
+  }
+  if (!["showcase", "cleanup-plan"].includes(command) && options.summaryPath) {
+    throw new CLIError("E_BAD_ARGS", "--summary is valid only for showcase or cleanup-plan");
+  }
+  return options;
+}
+
+async function readJSON(path, context) {
+  const metadata = await stat(path);
+  if (!metadata.isFile() || metadata.size > 16_777_216) {
+    throw new CLIError("E_JSON_READ", `${context} is not a bounded regular file`);
+  }
+  try {
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch (cause) {
+    throw new CLIError("E_JSON_READ", `cannot parse ${context}: ${cause.message}`);
+  }
+}
+
+function emit(value) {
+  process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+}
+
+try {
+  const options = parse(process.argv.slice(2));
+  const manifest = await loadManifest(options.manifestPath);
+  if (options.command === "validate") {
+    const prompt = await readFile(manifest.promptPath);
+    const goalObjective = buildGoalObjective(prompt.toString("utf8"));
+    emit({
+      ok: true,
+      command: "validate",
+      manifestPath: manifest.manifestPath,
+      arms: manifest.arms.map(({ id, label }) => ({ id, label })),
+      promptSHA256: `sha256:${createHash("sha256").update(prompt).digest("hex")}`,
+      goalObjectiveSHA256: `sha256:${createHash("sha256").update(goalObjective).digest("hex")}`,
+      model: manifest.model,
+      serviceTier: manifest.serviceTier,
+      deadlineSeconds: manifest.deadlineSeconds,
+      backendFixtureRevision: manifest.backendFixtureRevision,
+    });
+  } else if (options.command === "run") {
+    const result = await runBenchmark(manifest, { runId: options.runId });
+    emit(result);
+    process.exitCode = result.ok ? 0 : 1;
+  } else if (options.command === "demo") {
+    const result = await runLiveDemo(manifest, {
+      dryRun: options.dryRun,
+      runId: options.runId,
+    });
+    emit(result);
+    process.exitCode = result.ok ? 0 : 1;
+  } else if (options.command === "showcase") {
+    const summaryPath = options.summaryPath
+      ?? join(manifest.runRoot, "benchmark-runs", options.runId, "summary.json");
+    const summary = await readJSON(summaryPath, "run summary");
+    summary.summaryPath = summaryPath;
+    const result = await runShowcase(manifest, summary, {
+      dryRun: options.dryRun,
+      recordingSeconds: options.recordingSeconds,
+    });
+    emit(result);
+    process.exitCode = result.ok ? 0 : 1;
+  } else {
+    const runId = options.runId ?? (await readJSON(options.summaryPath, "run summary")).runId;
+    emit(buildCleanupPlan(manifest, runId));
+  }
+} catch (cause) {
+  emit({
+    ok: false,
+    error: {
+      code: cause?.code ?? "E_INTERNAL",
+      message: cause instanceof Error ? cause.message : String(cause),
+    },
+  });
+  process.exitCode = 1;
+}

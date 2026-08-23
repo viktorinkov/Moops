@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "runRoot": "../../.benchmark-runs",
+  "repositoryRoot": "../..",
+  "baselineCommit": "benchmark-start",
+  "promptPath": "../FEATURE_PROMPT.md",
+  "model": "gpt-5.6-sol",
+  "serviceTier": "fast",
+  "deadlineSeconds": 10800,
+  "agentCommand": [
+    "codex",
+    "app-server",
+    "--enable",
+    "goals",
+    "--listen",
+    "stdio://"
+  ],
+  "backendCommand": [
+    "node",
+    "${WORKTREE}/benchmark/backend/server.mjs",
+    "--port",
+    "${BACKEND_PORT}"
+  ],
+  "backendFixtureRevision": "catalog-v1",
+  "versionCommands": [
+    {
+      "name": "codex",
+      "argv": ["codex", "--version"]
+    },
+    {
+      "name": "codex-features",
+      "argv": ["codex", "features", "list"]
+    },
+    {
+      "name": "xcode",
+      "argv": ["/usr/bin/xcrun", "xcodebuild", "-version"]
+    },
+    {
+      "name": "simctl",
+      "argv": ["/usr/bin/xcrun", "simctl", "help"]
+    }
+  ],
+  "acceptanceCommand": [
+    "/usr/bin/xcrun",
+    "xcodebuild",
+    "test-without-building",
+    "-xctestrun",
+    "${XCTESTRUN}",
+    "-destination",
+    "id=${SIMULATOR_UDID}",
+    "-only-testing:FoodDeliveryBenchmarkUITests/BenchmarkFlowUITests/test3DeliveryPreferenceAcceptance"
+  ],
+  "appBundleId": "com.spencer..Food-Delivery",
+  "arms": [
+    {
+      "id": "codex-uitest",
+      "label": "CODEX + UITEST",
+      "worktree": "../../.benchmark-runs/worktrees/codex-uitest",
+      "simulatorUdid": "REPLACE-ARM-A-UDID",
+      "backendPort": 18055,
+      "derivedData": "../../.benchmark-runs/derived/codex-uitest",
+      "results": "../../.benchmark-runs/results/codex-uitest",
+      "environment": {}
+    },
+    {
+      "id": "codex-previews",
+      "label": "CODEX + PREVIEWS",
+      "worktree": "../../.benchmark-runs/worktrees/codex-previews",
+      "simulatorUdid": "REPLACE-ARM-B-UDID",
+      "backendPort": 18056,
+      "derivedData": "../../.benchmark-runs/derived/codex-previews",
+      "results": "../../.benchmark-runs/results/codex-previews",
+      "environment": {
+        "MOOPS_ENABLE_PREVIEWS": "1"
+      }
+    },
+    {
+      "id": "codex-injection",
+      "label": "CODEX + INJECTION",
+      "worktree": "../../.benchmark-runs/worktrees/codex-injection",
+      "simulatorUdid": "REPLACE-ARM-C-UDID",
+      "backendPort": 18057,
+      "derivedData": "../../.benchmark-runs/derived/codex-injection",
+      "results": "../../.benchmark-runs/results/codex-injection",
+      "environment": {
+        "MOOPS_ENABLE_INJECTIONIII": "1"
+      }
+    },
+    {
+      "id": "codex-moops-claudemem",
+      "label": "CODEX + MOOPS + CLAUDEMEM",
+      "worktree": "../../.benchmark-runs/worktrees/codex-moops-claudemem",
+      "simulatorUdid": "REPLACE-ARM-D-UDID",
+      "backendPort": 18058,
+      "derivedData": "../../.benchmark-runs/derived/codex-moops-claudemem",
+      "results": "../../.benchmark-runs/results/codex-moops-claudemem",
+      "environment": {
+        "MOOPS_ENABLE_CLAUDEMEM": "1",
+        "MOOPS_ENABLE_MOOPS": "1"
+      }
+    }
+  ],
+  "showcase": {
+    "desktopRegion": {
+      "x": 0,
+      "y": 0,
+      "width": 1920,
+      "height": 1080
+    },
+    "recordingSeconds": 10800
+  }
+}

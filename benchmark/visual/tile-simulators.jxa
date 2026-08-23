@@ -102,8 +102,8 @@ function run(argv) {
   }
   const base = responseBase(accessibility, screenRecording, windows);
   const assignments = Array.isArray(request.assignments) ? request.assignments : [];
-  if (assignments.length !== 4 || windows.length !== 4) {
-    return failResponse(base, "E_VISUAL_WINDOW_SET", "exactly four visible Simulator windows are required");
+  if (assignments.length !== 4) {
+    return failResponse(base, "E_VISUAL_WINDOW_SET", "exactly four target Simulator assignments are required");
   }
 
   const selected = [];
