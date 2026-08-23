@@ -89,7 +89,7 @@ for await (const line of lines) {
         sandbox: { type: "workspaceWrite", writableRoots: [], networkAccess: false },
         cwd: message.params.cwd,
         modelProvider: "openai",
-        approvalsReviewer: "user",
+        approvalsReviewer: message.params.approvalsReviewer ?? "user",
       },
     });
     send({ method: "thread/started", params: { thread: { id: threadId } } });
@@ -145,7 +145,7 @@ for await (const line of lines) {
         threadId,
         threadSettings: {
           approvalPolicy: message.params.approvalPolicy,
-          approvalsReviewer: "user",
+          approvalsReviewer: message.params.approvalsReviewer ?? "user",
           collaborationMode: { mode: "default", settings: { model: message.params.model } },
           cwd: message.params.cwd,
           effort: null,

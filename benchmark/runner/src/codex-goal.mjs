@@ -271,7 +271,8 @@ export async function runCodexGoal(argv, options) {
       if (message.params?.threadId !== threadId
         || settings?.cwd !== options.cwd
         || settings?.model !== options.model
-        || settings?.approvalPolicy !== "never"
+        || settings?.approvalPolicy !== "on-request"
+        || settings?.approvalsReviewer !== "auto_review"
         || !new Set(["fast", "priority"]).has(settings?.serviceTier)
         || policy?.type !== "workspaceWrite"
         || policy?.networkAccess !== true
@@ -479,7 +480,8 @@ export async function runCodexGoal(argv, options) {
       cwd: options.cwd,
       model: options.model,
       serviceTier: options.serviceTier,
-      approvalPolicy: "never",
+      approvalPolicy: "on-request",
+      approvalsReviewer: "auto_review",
       sandbox: "workspace-write",
       ephemeral: false,
       developerInstructions: options.developerInstructions,
@@ -536,7 +538,8 @@ export async function runCodexGoal(argv, options) {
     await emitEvidence("goal.verified_paused", { threadId, goal: verifiedGoal });
     await request("thread/settings/update", {
       threadId,
-      approvalPolicy: "never",
+      approvalPolicy: "on-request",
+      approvalsReviewer: "auto_review",
       cwd: options.cwd,
       model: options.model,
       serviceTier: options.serviceTier,

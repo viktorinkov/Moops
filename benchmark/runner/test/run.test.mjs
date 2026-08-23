@@ -361,10 +361,10 @@ test("starts all arms behind one barrier and records a common clock contract", a
       < requests.findIndex(({ method }) => method === "thread/start"), true);
     assert.equal(requests.findIndex(({ method }) => method === "plugin/list")
       < requests.findIndex(({ method }) => method === "thread/start"), true);
-    assert.equal(
-      typeof requests.find(({ method }) => method === "thread/start").params.developerInstructions,
-      "string",
-    );
+    const threadStart = requests.find(({ method }) => method === "thread/start");
+    assert.equal(typeof threadStart.params.developerInstructions, "string");
+    assert.equal(threadStart.params.approvalPolicy, "on-request");
+    assert.equal(threadStart.params.approvalsReviewer, "auto_review");
     assert.deepEqual(
       requests.filter(({ method }) => method === "thread/goal/set")
         .map(({ params }) => params.status),
@@ -375,6 +375,9 @@ test("starts all arms behind one barrier and records a common clock contract", a
         < requests.findIndex(({ method, params }) => method === "thread/goal/set" && params.status === "active"),
       true,
     );
+    const settingsUpdate = requests.find(({ method }) => method === "thread/settings/update");
+    assert.equal(settingsUpdate.params.approvalPolicy, "on-request");
+    assert.equal(settingsUpdate.params.approvalsReviewer, "auto_review");
   }
   assert.equal(result.prompt.sha256, "sha256:prompt");
   assert.equal(result.versions.node, process.version);
