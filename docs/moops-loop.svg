@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="800" viewBox="0 0 1240 800" role="img" aria-labelledby="title desc">
+  <title id="title">MOOPS live 2 by 2 mobile verification loop</title>
+  <desc id="desc">One external Codex Goal makes a structural iOS edit using the official Xcode MCP. Four isolated simulators are shown in a two by two live recording. UI automation is top left, Previews top right, InjectionIII bottom left, and MOOPS plus Claude-Mem bottom right. Every simulator shows the same timer. All arms must pass the same real-app and backend acceptance.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .title { font-size: 24px; font-weight: 700; fill: #172b4d; }
+    .subtitle { font-size: 13px; fill: #52637a; }
+    .box-title { font-size: 14px; font-weight: 700; }
+    .box-sub { font-size: 11px; }
+    .card-title { font-size: 13px; font-weight: 700; }
+    .card-copy { font-size: 12px; }
+    .timer { font-size: 12px; font-weight: 700; fill: white; letter-spacing: .5px; }
+  </style>
+  <rect width="1240" height="800" fill="#ffffff"/>
+  <text x="40" y="49" class="title">MOOPS keeps the mobile verification loop warm</text>
+  <text x="40" y="75" class="subtitle">One external Goal. One synchronized clock. Four isolated feedback paths. One real-app finish line.</text>
+
+  <line x1="250" y1="132" x2="330" y2="132" stroke="#52637a" stroke-width="2"/>
+  <polygon points="330,132 321,127 321,137" fill="#52637a"/>
+  <line x1="540" y1="132" x2="620" y2="132" stroke="#52637a" stroke-width="2"/>
+  <polygon points="620,132 611,127 611,137" fill="#52637a"/>
+
+  <rect x="40" y="100" width="210" height="64" rx="10" fill="#172b4d"/>
+  <text x="145" y="126" text-anchor="middle" class="box-title" fill="white">External Codex Goal</text>
+  <text x="145" y="146" text-anchor="middle" class="box-sub" fill="white">edit · observe · correct</text>
+  <rect x="330" y="100" width="210" height="64" rx="10" fill="#e8f1ff" stroke="#4c78a8"/>
+  <text x="435" y="126" text-anchor="middle" class="box-title" fill="#17375e">Structural iOS edit</text>
+  <text x="435" y="146" text-anchor="middle" class="box-sub" fill="#17375e">new file + stored state</text>
+  <rect x="620" y="100" width="250" height="64" rx="10" fill="#e7f5f7" stroke="#0b7a8f"/>
+  <text x="745" y="126" text-anchor="middle" class="box-title" fill="#164a55">Official Xcode MCP + build</text>
+  <text x="745" y="146" text-anchor="middle" class="box-sub" fill="#164a55">/usr/bin/xcrun mcpbridge</text>
+  <rect x="950" y="110" width="250" height="44" rx="9" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="1075" y="137" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">Common to all four arms</text>
+
+  <text x="620" y="205" text-anchor="middle" font-size="12" font-weight="700" fill="#52637a">LIVE RECORDING · EXACT 2 × 2 SIMULATOR LAYOUT · SYNCHRONIZED VISIBLE TIMER</text>
+
+  <rect x="40" y="225" width="560" height="140" rx="10" fill="#f3f7fc" stroke="#4c78a8" stroke-width="2"/>
+  <rect x="40" y="225" width="560" height="42" rx="9" fill="#4c78a8"/>
+  <rect x="40" y="251" width="560" height="16" fill="#4c78a8"/>
+  <text x="56" y="251" class="card-title" fill="white">TOP LEFT · CODEX + UITEST</text>
+  <rect x="480" y="232" width="100" height="28" rx="14" fill="#315d8a"/>
+  <text x="530" y="251" text-anchor="middle" class="timer">00:00:00</text>
+  <text x="64" y="302" class="card-copy" fill="#30465e">Build + launch</text>
+  <text x="64" y="327" class="card-copy" fill="#30465e">Reconstruct preconditions → navigate → inspect</text>
+
+  <rect x="640" y="225" width="560" height="140" rx="10" fill="#f5f1fb" stroke="#7562a8" stroke-width="2"/>
+  <rect x="640" y="225" width="560" height="42" rx="9" fill="#7562a8"/>
+  <rect x="640" y="251" width="560" height="16" fill="#7562a8"/>
+  <text x="656" y="251" class="card-title" fill="white">TOP RIGHT · CODEX + PREVIEWS</text>
+  <rect x="1080" y="232" width="100" height="28" rx="14" fill="#594782"/>
+  <text x="1130" y="251" text-anchor="middle" class="timer">00:00:00</text>
+  <text x="664" y="302" class="card-copy" fill="#4c416a">Construct faithful mock context → RenderPreview</text>
+  <text x="664" y="327" class="card-copy" fill="#4c416a">Real-app acceptance still required</text>
+
+  <rect x="40" y="475" width="560" height="140" rx="10" fill="#fff4e8" stroke="#c56a14" stroke-width="2"/>
+  <rect x="40" y="475" width="560" height="42" rx="9" fill="#c56a14"/>
+  <rect x="40" y="501" width="560" height="16" fill="#c56a14"/>
+  <text x="56" y="501" class="card-title" fill="white">BOTTOM LEFT · CODEX + INJECTION</text>
+  <rect x="480" y="482" width="100" height="28" rx="14" fill="#9b4f09"/>
+  <text x="530" y="501" text-anchor="middle" class="timer">00:00:00</text>
+  <text x="64" y="552" class="card-copy" fill="#6e430f">Compatible method body → hot inject</text>
+  <text x="64" y="577" class="card-copy" fill="#6e430f">Structural edit → recorded normal-build fallback</text>
+
+  <rect x="640" y="475" width="560" height="140" rx="10" fill="#eaf7f5" stroke="#168a7a" stroke-width="2"/>
+  <rect x="640" y="475" width="560" height="42" rx="9" fill="#168a7a"/>
+  <rect x="640" y="501" width="560" height="16" fill="#168a7a"/>
+  <text x="656" y="501" class="card-title" fill="white">BOTTOM RIGHT · CODEX + MOOPS + CLAUDEMEM</text>
+  <rect x="1080" y="482" width="100" height="28" rx="14" fill="#0f665b"/>
+  <text x="1130" y="501" text-anchor="middle" class="timer">00:00:00</text>
+  <text x="664" y="552" class="card-copy" fill="#235c55">Claude-Mem recalls checkpoint descriptor</text>
+  <text x="664" y="577" class="card-copy" fill="#235c55">Build → preserve durable app data → replay public route → fresh predicates</text>
+
+  <line x1="320" y1="365" x2="320" y2="385" stroke="#4c78a8" stroke-width="2"/>
+  <line x1="920" y1="365" x2="920" y2="385" stroke="#7562a8" stroke-width="2"/>
+  <line x1="320" y1="475" x2="320" y2="455" stroke="#c56a14" stroke-width="2"/>
+  <line x1="920" y1="475" x2="920" y2="455" stroke="#168a7a" stroke-width="3"/>
+  <polygon points="320,385 315,376 325,376" fill="#4c78a8"/>
+  <polygon points="920,385 915,376 925,376" fill="#7562a8"/>
+  <polygon points="320,455 315,464 325,464" fill="#c56a14"/>
+  <polygon points="920,455 915,464 925,464" fill="#168a7a"/>
+  <rect x="250" y="385" width="740" height="70" rx="10" fill="#e9f6ec" stroke="#2e7d32" stroke-width="2"/>
+  <text x="620" y="413" text-anchor="middle" class="box-title" fill="#1d5722">SAME REAL-APP ACCEPTANCE</text>
+  <text x="620" y="435" text-anchor="middle" class="box-sub" fill="#1d5722">fresh UI hierarchy + isolated backend receipt + exact run ID</text>
+
+  <rect x="40" y="720" width="1160" height="42" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="620" y="746" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">Only this shared finish line can turn the actual app green and complete the Goal.</text>
+</svg>
