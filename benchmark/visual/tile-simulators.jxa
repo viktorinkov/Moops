@@ -29,6 +29,12 @@ function integerFrame(window) {
 function visibleStandardWindows(systemEvents) {
   const result = [];
   const processes = systemEvents.applicationProcesses.whose({ name: "Simulator" })();
+  // Simulator can expose no AX windows while another application is frontmost.
+  // Bring each matching process forward before reading the live window set.
+  processes.forEach((process) => {
+    try { process.frontmost = true; } catch (_) { /* The later window-set check fails closed. */ }
+  });
+  delay(0.2);
   processes.forEach((process) => {
     const processId = Number(process.unixId());
     process.windows().forEach((window, windowIndex) => {
@@ -40,6 +46,11 @@ function visibleStandardWindows(systemEvents) {
     });
   });
   return result;
+}
+
+function matchesConfiguredTitle(actualTitle, configuredTitle) {
+  return actualTitle === configuredTitle
+    || actualTitle.startsWith(`${configuredTitle} – `);
 }
 
 function publicWindow(windowRecord) {
@@ -70,7 +81,7 @@ function run(argv) {
   const systemEvents = Application("System Events");
   let trusted = false;
   try {
-    trusted = Boolean(systemEvents.UIElementsEnabled());
+    trusted = Boolean(systemEvents.uiElementsEnabled());
   } catch (_) {
     trusted = false;
   }
@@ -108,7 +119,7 @@ function run(argv) {
 
   const selected = [];
   for (const assignment of assignments) {
-    const matches = windows.filter(({ title }) => title === assignment.title);
+    const matches = windows.filter(({ title }) => matchesConfiguredTitle(title, assignment.title));
     if (matches.length !== 1) {
       return failResponse(
         base,
@@ -124,9 +135,14 @@ function run(argv) {
 
   try {
     selected.forEach(({ assignment, windowRecord }) => {
-      const frame = assignment.expectedFrame;
-      windowRecord.window.size = [frame.width, frame.height];
-      windowRecord.window.position = [frame.x, frame.y];
+      const cell = assignment.expectedFrame;
+      const size = integerFrame(windowRecord.window);
+      if (size.width > cell.width || size.height > cell.height) {
+        throw new Error(`${assignment.arm} Simulator window does not fit its ${assignment.position} cell`);
+      }
+      const x = cell.x + Math.floor((cell.width - size.width) / 2);
+      const y = cell.y + Math.floor((cell.height - size.height) / 2);
+      windowRecord.window.position = [x, y];
     });
     delay(0.2);
   } catch (error) {

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -16,6 +17,13 @@ const TITLES = Object.freeze({
 });
 
 const REGION = Object.freeze({ x: 20, y: 40, width: 1600, height: 1000 });
+
+test("JXA checks the real lower-camel System Events accessibility property", async () => {
+  const source = await readFile(new URL("../tile-simulators.jxa", import.meta.url), "utf8");
+  assert.match(source, /systemEvents\.uiElementsEnabled\(\)/);
+  assert.doesNotMatch(source, /systemEvents\.UIElementsEnabled\(\)/);
+  assert.match(source, /process\.frontmost = true/);
+});
 
 function successfulProbe(overrides = {}) {
   const assignments = buildGrid(REGION, TITLES);
@@ -153,6 +161,41 @@ test("tileSimulatorWindows ignores unrelated Simulator windows outside the four 
   assert.equal(receipt.assignments.length, 4);
 });
 
+test("tileSimulatorWindows accepts Simulator's runtime suffix while keeping device names exact", async () => {
+  const probe = successfulProbe();
+  probe.discoveredWindows = probe.discoveredWindows.map((window) => ({
+    ...window,
+    title: `${window.title} – iOS 18.5`,
+  }));
+  const receipt = await tileSimulatorWindows(
+    { region: REGION, titles: TITLES },
+    { execute: fakeExecutor(probe).execute },
+  );
+  assert.equal(receipt.ok, true);
+  assert.equal(receipt.assignments.length, 4);
+});
+
+test("tileSimulatorWindows accepts a proportionally scaled window centered inside each cell", async () => {
+  const probe = successfulProbe();
+  probe.discoveredWindows = probe.discoveredWindows.map((window, index) => ({
+    ...window,
+    frame: {
+      x: 20 + (index % 2) * 800 + 300,
+      y: 40 + Math.floor(index / 2) * 500,
+      width: 200,
+      height: 500,
+    },
+  }));
+  const receipt = await tileSimulatorWindows(
+    { region: REGION, titles: TITLES },
+    { execute: fakeExecutor(probe).execute },
+  );
+  assert.equal(receipt.ok, true);
+  assert.deepEqual(receipt.assignments[0].cellFrame, {
+    x: 20, y: 40, width: 800, height: 500,
+  });
+});
+
 test("tileSimulatorWindows fails closed when a title is duplicated", async () => {
   const probe = successfulProbe();
   probe.discoveredWindows[3].title = probe.discoveredWindows[2].title;
@@ -163,9 +206,9 @@ test("tileSimulatorWindows fails closed when a title is duplicated", async () =>
   );
 });
 
-test("tileSimulatorWindows fails closed when the returned frame differs by one pixel", async () => {
+test("tileSimulatorWindows fails closed when a window is shifted by one pixel", async () => {
   const probe = successfulProbe();
-  probe.discoveredWindows[0].frame = { ...probe.discoveredWindows[0].frame, width: 799 };
+  probe.discoveredWindows[0].frame = { ...probe.discoveredWindows[0].frame, x: 21 };
   const fake = fakeExecutor(probe);
   await assert.rejects(
     tileSimulatorWindows({ region: REGION, titles: TITLES }, { execute: fake.execute }),

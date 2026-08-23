@@ -10,6 +10,7 @@ import { buildGoalObjective } from "./src/codex-goal.mjs";
 import { runLiveDemo } from "./src/demo.mjs";
 import { runBenchmark } from "./src/run.mjs";
 import { runShowcase } from "./src/showcase.mjs";
+import { publishTranscripts } from "./src/transcript-publication.mjs";
 
 class CLIError extends Error {
   constructor(code, message) {
@@ -21,8 +22,11 @@ class CLIError extends Error {
 
 function parse(argv) {
   const [command, manifestArgument, ...rest] = argv;
-  if (!["validate", "run", "demo", "showcase", "cleanup-plan"].includes(command)) {
-    throw new CLIError("E_BAD_COMMAND", "expected validate, run, demo, showcase, or cleanup-plan");
+  if (!["validate", "run", "demo", "showcase", "cleanup-plan", "publish-transcripts"].includes(command)) {
+    throw new CLIError(
+      "E_BAD_COMMAND",
+      "expected validate, run, demo, showcase, cleanup-plan, or publish-transcripts",
+    );
   }
   if (!manifestArgument || manifestArgument.startsWith("--")) {
     throw new CLIError("E_BAD_ARGS", "a manifest path is required");
@@ -50,6 +54,9 @@ function parse(argv) {
   }
   if (command === "demo" && !options.runId) {
     throw new CLIError("E_BAD_ARGS", "demo requires --run-id");
+  }
+  if (command === "publish-transcripts" && !options.runId) {
+    throw new CLIError("E_BAD_ARGS", "publish-transcripts requires --run-id");
   }
   if (!["demo", "showcase"].includes(command) && options.dryRun) {
     throw new CLIError("E_BAD_ARGS", "--dry-run is valid only for demo or showcase");
@@ -119,6 +126,8 @@ try {
     });
     emit(result);
     process.exitCode = result.ok ? 0 : 1;
+  } else if (options.command === "publish-transcripts") {
+    emit(await publishTranscripts(manifest, options.runId));
   } else {
     const runId = options.runId ?? (await readJSON(options.summaryPath, "run summary")).runId;
     emit(buildCleanupPlan(manifest, runId));

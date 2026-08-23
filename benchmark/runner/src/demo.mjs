@@ -99,24 +99,16 @@ export function buildLiveDemoPlan(manifest, options) {
         "recordVideo", "--codec=h264", join(demoDirectory, `${arm.id}.mp4`),
       ],
     })),
-    desktopRecording: {
-      output: join(demoDirectory, "moops-four-arm-live.source.mov"),
-      argv: [
-        "/usr/sbin/screencapture",
-        "-v",
-        `-R${manifest.showcase.desktopRegion.x},${manifest.showcase.desktopRegion.y},${manifest.showcase.desktopRegion.width},${manifest.showcase.desktopRegion.height}`,
-        `-V${manifest.deadlineSeconds + 600}`,
-        "-k",
-        join(demoDirectory, "moops-four-arm-live.source.mov"),
-      ],
-    },
     compositeRecording: {
-      source: join(demoDirectory, "moops-four-arm-live.source.mov"),
+      source: manifest.arms.map((arm) => join(demoDirectory, `${arm.id}.mp4`)),
       output: join(demoDirectory, "moops-four-arm-live.mp4"),
       argv: [
         "/usr/bin/env", "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error",
-        "-n", "-i", join(demoDirectory, "moops-four-arm-live.source.mov"),
-        "-map", "0:v:0", "-c:v", "copy", "-movflags", "+faststart",
+        "-n",
+        ...manifest.arms.flatMap((arm) => ["-i", join(demoDirectory, `${arm.id}.mp4`)]),
+        "-filter_complex",
+        "[0:v]scale=-2:540,pad=960:540:(ow-iw)/2:0:black[a];[1:v]scale=-2:540,pad=960:540:(ow-iw)/2:0:black[b];[2:v]scale=-2:540,pad=960:540:(ow-iw)/2:0:black[c];[3:v]scale=-2:540,pad=960:540:(ow-iw)/2:0:black[d];[a][b][c][d]xstack=inputs=4:layout=0_0|960_0|0_540|960_540[v]",
+        "-map", "[v]", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-shortest",
         join(demoDirectory, "moops-four-arm-live.mp4"),
       ],
     },
@@ -305,7 +297,7 @@ export async function runLiveDemo(manifest, options = {}) {
           output: preflightImage,
           sizeBytes: preflightMetadata.size,
         };
-        const recordingPlans = [plan.desktopRecording, ...plan.simulatorRecordings];
+        const recordingPlans = plan.simulatorRecordings;
         for (const [index, recording] of recordingPlans.entries()) {
           const controller = await startBackgroundProcess(recording.argv, {
             cwd: plan.demoDirectory,
@@ -385,9 +377,9 @@ export async function runLiveDemo(manifest, options = {}) {
     }
   }
 
-  const expectedRecordingCount = plan ? 1 + plan.simulatorRecordings.length : 0;
+  const expectedRecordingCount = plan ? plan.simulatorRecordings.length : 0;
   const recordingsOK = recordingEvidence.length === expectedRecordingCount
-    && expectedRecordingCount === 5
+    && expectedRecordingCount === 4
     && recordingEvidence.every(({ ok }) => ok)
     && compositeRecordingEvidence?.ok === true;
   if (summary.ok === true && recordingsOK) {

@@ -62,9 +62,11 @@ test("live demo plans one synchronized visual run, not a post-run replay", () =>
   assert.equal(plan.mode, "live-measured-goals");
   assert.equal(plan.launches.length, 4);
   assert.equal(plan.simulatorRecordings.length, 4);
-  assert.equal(plan.desktopRecording.output.endsWith("moops-four-arm-live.source.mov"), true);
   assert.equal(plan.compositeRecording.output.endsWith("moops-four-arm-live.mp4"), true);
-  assert.equal(plan.compositeRecording.argv.includes("-c:v"), true);
+  assert.equal(plan.compositeRecording.source.length, 4);
+  assert.equal(plan.compositeRecording.argv.includes("xstack=inputs=4:layout=0_0|960_0|0_540|960_540[v]"), false);
+  assert.match(plan.compositeRecording.argv.join(" "), /xstack=inputs=4:layout=0_0\|960_0\|0_540\|960_540/);
+  assert.equal(plan.compositeRecording.argv.filter((entry) => entry === "-i").length, 4);
   assert.equal(plan.layout.mode, "verified-2x2");
   assert.equal(plan.layout.argv.includes("tile-simulators.mjs"), false);
   assert.equal(plan.layout.argv.some((entry) => entry.endsWith("benchmark/visual/tile-simulators.mjs")), true);

@@ -230,6 +230,30 @@ the runner does not estimate it. “Reinforcement” here means faster online
 observe/edit/build/restore/verify iterations through a durable Goal, not model
 weight training.
 
+## Publish reviewable transcripts
+
+Raw evidence remains private under `.benchmark-runs`. After a run has produced
+all four transcript sets, publish a sanitized, reviewable bundle explicitly:
+
+```sh
+benchmark/runner/moops-benchmark publish-transcripts \
+  benchmark/runner/benchmark.local.json --run-id take-001
+```
+
+The command writes `results/runs/take-001/` with global `summary.json` and
+`events.jsonl`, plus each arm's app-server requests, app-server responses,
+stderr, and `arm-result.json`. `bundle.json` records source/output hashes,
+record counts, byte counts, and redaction counts without publishing private
+source paths. Wall-clock and monotonic timing, Goal/tool events, exit status,
+metrics, and failures remain reviewable.
+
+Publication redacts credential-shaped fields and text, authorization material,
+private-key blocks, user/temp paths, and every configured worktree,
+DerivedData, result, repository, and run-root path. It requires bounded regular
+files and valid JSON/JSONL for every arm, refuses unsafe run IDs and existing
+destinations, and atomically exposes the bundle only after every file passes.
+An empty stderr log is valid; missing or empty structured transcripts are not.
+
 ## Post-run visual replay
 
 First inspect the exact non-mutating plan:

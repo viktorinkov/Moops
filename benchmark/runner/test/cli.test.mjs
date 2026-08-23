@@ -26,3 +26,11 @@ test("demo dry-run exposes the complete live plan without touching simulators", 
   assert.equal(output.dryRun, true);
   assert.equal(output.plan.mode, "live-measured-goals");
 });
+
+test("transcript publication is an explicit run-scoped command", () => {
+  const result = invoke(["publish-transcripts", manifest]);
+  assert.equal(result.status, 1);
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.error.code, "E_BAD_ARGS");
+  assert.match(output.error.message, /publish-transcripts requires --run-id/);
+});

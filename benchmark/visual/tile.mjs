@@ -152,6 +152,27 @@ function sameFrame(left, right) {
   return ["x", "y", "width", "height"].every((key) => left[key] === right[key]);
 }
 
+function centeredInsideCell(frame, cell) {
+  if (
+    frame.x < cell.x
+    || frame.y < cell.y
+    || frame.x + frame.width > cell.x + cell.width
+    || frame.y + frame.height > cell.y + cell.height
+  ) return false;
+  const horizontalCenterDelta = Math.abs(
+    (2 * frame.x + frame.width) - (2 * cell.x + cell.width),
+  );
+  const verticalCenterDelta = Math.abs(
+    (2 * frame.y + frame.height) - (2 * cell.y + cell.height),
+  );
+  return horizontalCenterDelta <= 1 && verticalCenterDelta <= 1;
+}
+
+function matchesConfiguredTitle(actualTitle, configuredTitle) {
+  return actualTitle === configuredTitle
+    || actualTitle.startsWith(`${configuredTitle} – `);
+}
+
 function validateProbe(probe, assignments) {
   if (!probe || typeof probe !== "object" || probe.schemaVersion !== 1) {
     fail("E_VISUAL_RECEIPT", "JXA tiler receipt has an unsupported schema");
@@ -183,7 +204,9 @@ function validateProbe(probe, assignments) {
   }
 
   const expectedTitles = new Set(assignments.map(({ title }) => title));
-  const targetWindows = probe.discoveredWindows.filter(({ title }) => expectedTitles.has(title));
+  const targetWindows = probe.discoveredWindows.filter(({ title }) => (
+    assignments.some((assignment) => matchesConfiguredTitle(title, assignment.title))
+  ));
   const actualTitles = targetWindows.map(({ title }) => title);
   const identities = targetWindows.map(({ processId, windowIndex }) => `${processId}:${windowIndex}`);
   if (
@@ -198,16 +221,16 @@ function validateProbe(probe, assignments) {
   }
 
   return assignments.map((assignment) => {
-    const window = targetWindows.find(({ title }) => title === assignment.title);
+    const window = targetWindows.find(({ title }) => matchesConfiguredTitle(title, assignment.title));
     if (!window || !isIntegerFrame(window.frame)) {
       fail("E_VISUAL_RECEIPT", `${assignment.arm} returned an invalid window frame`);
     }
-    if (window.title !== assignment.title) {
+    if (!matchesConfiguredTitle(window.title, assignment.title)) {
       fail("E_VISUAL_WINDOW_SET", `${assignment.arm} window title changed during layout`);
     }
-    if (!sameFrame(window.frame, assignment.expectedFrame)) {
-      fail("E_VISUAL_FRAME", `${assignment.arm} Simulator frame does not match its exact ${assignment.position} cell`, {
-        expected: assignment.expectedFrame,
+    if (!centeredInsideCell(window.frame, assignment.expectedFrame)) {
+      fail("E_VISUAL_FRAME", `${assignment.arm} Simulator frame is not centered inside its exact ${assignment.position} cell`, {
+        expectedCell: assignment.expectedFrame,
         actual: window.frame,
       });
     }
@@ -215,6 +238,7 @@ function validateProbe(probe, assignments) {
       ...assignment,
       processId: window.processId,
       windowIndex: window.windowIndex,
+      cellFrame: assignment.expectedFrame,
       actualFrame: window.frame,
     };
   });
