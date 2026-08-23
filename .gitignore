@@ -10,6 +10,8 @@ node_modules/
 results/*.json
 results/*.log
 results/claude-mem/
+.benchmark-runs/
+benchmark/runner/benchmark.local.json
 
 # The complete Jerboa design is local research context, not part of MOOPS.
 jerboa-spec*/
