@@ -153,9 +153,10 @@ function validateXcodeWorkspaceBinding(armId, xcodeCalls, expectedWorkspace) {
   if (!listing.strings.some((value) => value.includes(expectedWorkspace))) {
     fail("E_XCODE_WORKSPACE", `${armId} XcodeListWindows did not contain ${expectedWorkspace}`);
   }
-  const listedWorkspaces = listing.strings.flatMap((value) => (
-    [...value.matchAll(/\/[^\n\r"']+?\.xcodeproj/g)].map((match) => match[0])
-  ));
+  const listedWorkspaces = [...new Set(listing.strings.flatMap((value) => (
+    [...value.replaceAll("\\/", "/").matchAll(/\/[^\n\r"']+?\.xcodeproj/g)]
+      .map((match) => match[0])
+  )))];
   if (listedWorkspaces.some((workspace) => workspace !== expectedWorkspace)) {
     fail("E_XCODE_WORKSPACE", `${armId} XcodeListWindows exposed another workspace tab`);
   }

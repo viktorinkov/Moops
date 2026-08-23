@@ -84,6 +84,26 @@ test("usage gate requires Xcode in every arm, RenderPreview only in B, and D fre
     }),
   };
   assert.doesNotThrow(() => validateArmUsage("codex-uitest", [xcode], [], [], expectedWorkspace));
+  const escapedWorkspace = expectedWorkspace.replaceAll("/", "\\/");
+  const realXcodeListing = {
+    ...xcode,
+    resultText: JSON.stringify({
+      content: [{
+        type: "text",
+        text: `{"message":"* tabIdentifier: ${expectedTab}, workspacePath: ${escapedWorkspace}\\n"}`,
+      }],
+      structuredContent: {
+        message: `* tabIdentifier: ${expectedTab}, workspacePath: ${expectedWorkspace}\n`,
+      },
+    }),
+  };
+  assert.doesNotThrow(() => validateArmUsage(
+    "codex-uitest",
+    [realXcodeListing],
+    [],
+    [],
+    expectedWorkspace,
+  ));
   assert.throws(
     () => validateArmUsage("codex-previews", [xcode], [], [], expectedWorkspace),
     /RenderPreview/,

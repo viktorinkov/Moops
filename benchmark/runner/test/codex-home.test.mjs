@@ -78,9 +78,13 @@ test("provisions four isolated homes with common Xcode MCP and Claude-Mem only i
     };
   };
   const events = [];
+  const arms = ARM_DEFINITIONS.map((definition, index) => ({
+    ...definition,
+    environment: { MCP_XCODE_PID: String(50_001 + index) },
+  }));
   const homes = await prepareCodexHomes({
     agentCommand: ["codex", "app-server", "--enable", "goals"],
-    arms: ARM_DEFINITIONS,
+    arms,
   }, {
     ledger: { emit: async (...event) => events.push(event) },
     runDirectory,
@@ -95,6 +99,8 @@ test("provisions four isolated homes with common Xcode MCP and Claude-Mem only i
     const config = await readFile(join(record.home, "config.toml"), "utf8");
     assert.match(config, /command = "\/usr\/bin\/xcrun"/);
     assert.match(config, /args = \["mcpbridge"\]/);
+    assert.match(config, /\[mcp_servers\.xcode\.env\]/);
+    assert.match(config, new RegExp(`MCP_XCODE_PID = "${50_001 + ARM_DEFINITIONS.indexOf(definition)}"`));
     assert.equal(record.xcodeMCP.command, "/usr/bin/xcrun");
     assert.equal(record.claudeMemEnabled, definition.id === "codex-moops-claudemem");
   }

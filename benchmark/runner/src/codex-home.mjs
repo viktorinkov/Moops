@@ -41,11 +41,17 @@ export function scrubTreatmentEnvironment(environment) {
   )));
 }
 
-function commonConfig() {
+function commonConfig(xcodePid) {
+  if (!/^[1-9][0-9]*$/.test(xcodePid ?? "")) {
+    fail("E_CODEX_HOME_XCODE_PID", "each arm requires a positive MCP_XCODE_PID");
+  }
   return [
     "[mcp_servers.xcode]",
     'command = "/usr/bin/xcrun"',
     'args = ["mcpbridge"]',
+    "",
+    "[mcp_servers.xcode.env]",
+    `MCP_XCODE_PID = "${xcodePid}"`,
     "",
   ].join("\n");
 }
@@ -121,7 +127,7 @@ export async function prepareCodexHomes(manifest, context, options = {}) {
     const home = join(homesRoot, arm.id);
     await mkdir(home, { mode: 0o700 });
     const configPath = join(home, "config.toml");
-    await writeFile(configPath, commonConfig(), { flag: "wx", mode: 0o600 });
+    await writeFile(configPath, commonConfig(arm.environment?.MCP_XCODE_PID), { flag: "wx", mode: 0o600 });
     await symlink(sourceAuth, join(home, "auth.json"));
     const environment = { ...cleanHost, CODEX_HOME: home };
 
@@ -160,7 +166,12 @@ export async function prepareCodexHomes(manifest, context, options = {}) {
       configPath,
       configSHA256: `sha256:${createHash("sha256").update(config).digest("hex")}`,
       authentication: "private symlink to operator auth; contents never copied or ledgered",
-      xcodeMCP: { command: "/usr/bin/xcrun", args: ["mcpbridge"], verified: true },
+      xcodeMCP: {
+        command: "/usr/bin/xcrun",
+        args: ["mcpbridge"],
+        processId: Number(arm.environment.MCP_XCODE_PID),
+        verified: true,
+      },
       claudeMemEnabled: arm.id === ARM_D,
       claudeMemVersion: arm.id === ARM_D ? "13.15.3" : null,
       cliInventory: {
