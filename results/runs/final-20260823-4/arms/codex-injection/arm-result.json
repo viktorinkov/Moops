@@ -1,0 +1,107 @@
+{
+  "id": "codex-injection",
+  "label": "CODEX + INJECTION",
+  "ok": false,
+  "commit": "016932bfeb0607ff07ef2472b180b32ea079d0a2",
+  "command": {
+    "argv": [
+      "codex",
+      "app-server",
+      "--enable",
+      "goals",
+      "--listen",
+      "stdio://"
+    ],
+    "exitCode": 1,
+    "signal": null,
+    "serverExitCode": 0,
+    "timedOut": false,
+    "spawnError": null,
+    "protocolError": {
+      "code": "E_GOAL_PROTOCOL",
+      "message": "command timed out"
+    },
+    "startedEpochMs": 1787529224773,
+    "startedMonotonicNs": "94100256920041",
+    "endedEpochMs": 1787529346072,
+    "durationMs": 121299,
+    "measuredDurationMs": null,
+    "activatedEpochMs": null,
+    "activatedMonotonicNs": null,
+    "threadId": "01a0310b-6f8a-7b60-bb62-0c787df47fe3",
+    "goal": null,
+    "turns": [],
+    "capabilityEvidence": {
+      "xcode": {
+        "server": "xcode",
+        "pluginId": null,
+        "tools": [
+          "BuildProject",
+          "DocumentationSearch",
+          "GetBuildLog",
+          "GetTestList",
+          "RenderPreview",
+          "RunAllTests",
+          "RunCodeSnippet",
+          "RunSomeTests",
+          "XcodeGetCurrentFile",
+          "XcodeGlob",
+          "XcodeGrep",
+          "XcodeLS",
+          "XcodeListNavigatorIssues",
+          "XcodeListWindows",
+          "XcodeMV",
+          "XcodeMakeDir",
+          "XcodeRM",
+          "XcodeRead",
+          "XcodeRefreshCodeIssuesInFile",
+          "XcodeUpdate",
+          "XcodeWrite"
+        ]
+      },
+      "claudeMem": null,
+      "enabledPlugins": [],
+      "ambientServers": [
+        "codex_apps"
+      ]
+    },
+    "usageEvidence": null,
+    "mcpCalls": [],
+    "commands": [],
+    "fileChanges": [],
+    "trailingEvidence": [],
+    "completionEvidence": null
+  },
+  "claudeMem": null,
+  "injectionIII": {
+    "ok": false,
+    "error": {
+      "code": "E_INJECTION_APP_PID",
+      "message": "arm C has no successful simctl launch receipt with an app PID"
+    }
+  },
+  "test": {
+    "status": "not_run",
+    "reason": "agent command did not pass"
+  },
+  "backend": {
+    "pid": 87647,
+    "port": 18157,
+    "baseURL": "http://127.0.0.1:18157",
+    "fixtureRevision": "catalog-v1"
+  },
+  "completedEpochMs": 1787529346073,
+  "metrics": {
+    "semantics": "online Goal-loop/tool throughput; no model weights are trained",
+    "goalActivatedToAgentCompletionMs": null,
+    "timeToFirstRealAppFeedbackMs": null,
+    "timeToFirstRealAppFeedbackBasis": "not observed in structured app-server evidence",
+    "buildIterationCount": 0,
+    "agentVerificationIterationCount": 0,
+    "sharedAcceptanceIterationCount": 0,
+    "sharedAcceptanceDurationMs": null,
+    "stateReconstructionAndRestore": null,
+    "totalTimeToGreenMs": null
+  },
+  "resultsDirectory": "<ARM_RUN:codex-injection>"
+}

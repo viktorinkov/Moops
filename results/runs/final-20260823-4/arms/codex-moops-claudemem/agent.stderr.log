@@ -1,0 +1,2 @@
+Claude-Mem worker is unreachable at http://127.0.0.1:37977/api/health
+run-arm-d: could not verify and stop this run's Claude-Mem worker
