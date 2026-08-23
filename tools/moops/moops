@@ -1,0 +1,152 @@
+#!/usr/bin/env node
+
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { performance } from "node:perf_hooks";
+
+import { validateCheckpoint } from "./src/checkpoint.mjs";
+import { executeCommand } from "./src/command.mjs";
+import { runWorkflow } from "./src/workflow.mjs";
+
+const toolDirectory = dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = resolve(toolDirectory, "../..");
+const defaultCheckpoint = resolve(
+  repositoryRoot,
+  "benchmark/checkpoints/food-delivery-cart.json",
+);
+const supportedCommands = new Set(["doctor", "checkpoint", "verify", "build-and-restore"]);
+const MAX_CHECKPOINT_BYTES = 262_144;
+
+class CLIError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "CLIError";
+    this.code = code;
+  }
+}
+
+function parseArguments(argv) {
+  const [command, ...rest] = argv;
+  if (!supportedCommands.has(command)) {
+    throw new CLIError(
+      "E_BAD_COMMAND",
+      "expected doctor, checkpoint, verify, or build-and-restore",
+    );
+  }
+  let checkpointPath;
+  let outputPath;
+  for (let index = 0; index < rest.length; index += 1) {
+    const argument = rest[index];
+    if (argument === "--output") {
+      if (outputPath !== undefined || index + 1 >= rest.length) {
+        throw new CLIError("E_BAD_ARGS", "--output requires exactly one path");
+      }
+      outputPath = resolve(process.cwd(), rest[index + 1]);
+      index += 1;
+    } else if (argument.startsWith("--")) {
+      throw new CLIError("E_BAD_ARGS", `unknown option ${argument}`);
+    } else if (checkpointPath === undefined) {
+      checkpointPath = resolve(process.cwd(), argument);
+    } else {
+      throw new CLIError("E_BAD_ARGS", "only one checkpoint path is allowed");
+    }
+  }
+  return { command, checkpointPath: checkpointPath ?? defaultCheckpoint, outputPath };
+}
+
+async function loadCheckpoint(path) {
+  let source;
+  try {
+    const metadata = await stat(path);
+    if (!metadata.isFile()) {
+      throw new CLIError("E_CHECKPOINT_READ", "checkpoint path is not a regular file");
+    }
+    if (metadata.size > MAX_CHECKPOINT_BYTES) {
+      throw new CLIError(
+        "E_CHECKPOINT_SIZE",
+        `checkpoint exceeds ${MAX_CHECKPOINT_BYTES} bytes`,
+      );
+    }
+    source = await readFile(path, "utf8");
+  } catch (cause) {
+    if (cause instanceof CLIError) throw cause;
+    throw new CLIError("E_CHECKPOINT_READ", `cannot read checkpoint: ${cause.message}`);
+  }
+  let checkpoint;
+  try {
+    checkpoint = JSON.parse(source);
+  } catch {
+    throw new CLIError("E_CHECKPOINT_JSON", "checkpoint is not valid JSON");
+  }
+  return validateCheckpoint(checkpoint);
+}
+
+async function emit(report, outputPath) {
+  const json = `${JSON.stringify(report, null, 2)}\n`;
+  if (outputPath !== undefined) {
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, json, { encoding: "utf8" });
+  }
+  process.stdout.write(json);
+}
+
+function errorReport(command, cause, elapsedMs) {
+  return {
+    reportVersion: 1,
+    command: command ?? "admission",
+    ok: false,
+    phases: [],
+    timingsMs: { totalMs: elapsedMs },
+    error: {
+      code: cause?.code ?? "E_INTERNAL",
+      phase: "admission",
+      message: cause instanceof Error ? cause.message : String(cause),
+    },
+  };
+}
+
+const started = performance.now();
+let parsed;
+try {
+  parsed = parseArguments(process.argv.slice(2));
+  const checkpointStarted = performance.now();
+  const checkpoint = await loadCheckpoint(parsed.checkpointPath);
+  const checkpointMs = performance.now() - checkpointStarted;
+  let report;
+  if (parsed.command === "checkpoint") {
+    report = {
+      reportVersion: 1,
+      command: "checkpoint",
+      ok: true,
+      checkpoint: {
+        name: checkpoint.name,
+        fixtureVersion: checkpoint.fixtureVersion,
+        fingerprint: checkpoint.fingerprint,
+      },
+      phases: [{ name: "checkpoint", ok: true, elapsedMs: checkpointMs }],
+      timingsMs: {
+        checkpointMs,
+        totalMs: performance.now() - started,
+      },
+    };
+  } else {
+    report = await runWorkflow(parsed.command, checkpoint, {
+      cwd: repositoryRoot,
+      env: process.env,
+      runCommand: executeCommand,
+    });
+    report.timingsMs.checkpointMs = checkpointMs;
+    report.timingsMs.totalMs += checkpointMs;
+  }
+  await emit(report, parsed.outputPath);
+  process.exitCode = report.ok ? 0 : 1;
+} catch (cause) {
+  const report = errorReport(parsed?.command, cause, performance.now() - started);
+  try {
+    await emit(report, parsed?.outputPath);
+  } catch (writeCause) {
+    process.stdout.write(`${JSON.stringify(errorReport(parsed?.command, writeCause, performance.now() - started), null, 2)}\n`);
+  }
+  process.exitCode = 1;
+}

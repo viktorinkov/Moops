@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "fixtureVersion": "food-delivery-f4c8974",
+  "name": "food-delivery-cart",
+  "app": {
+    "bundleId": "com.spencer..Food-Delivery"
+  },
+  "simulator": {
+    "udid": "${MOOPS_SIMULATOR_UDID}"
+  },
+  "adapters": {
+    "doctor": [
+      [
+        "/usr/bin/xcrun",
+        "--find",
+        "xcodebuild"
+      ],
+      [
+        "/usr/bin/xcrun",
+        "simctl",
+        "getenv",
+        "${MOOPS_SIMULATOR_UDID}",
+        "HOME"
+      ],
+      [
+        "/usr/bin/test",
+        "-f",
+        "benchmark/FoodDelivery/Food Delivery.xcodeproj/project.pbxproj"
+      ],
+      [
+        "/usr/bin/test",
+        "-x",
+        "${MOOPS_UI_ADAPTER}"
+      ]
+    ],
+    "build": [
+      "/usr/bin/xcrun",
+      "xcodebuild",
+      "-project",
+      "benchmark/FoodDelivery/Food Delivery.xcodeproj",
+      "-scheme",
+      "Food Delivery",
+      "-configuration",
+      "Debug",
+      "-sdk",
+      "iphonesimulator",
+      "-destination",
+      "id=${MOOPS_SIMULATOR_UDID}",
+      "-derivedDataPath",
+      "${MOOPS_DERIVED_DATA}",
+      "build"
+    ],
+    "install": [
+      "/usr/bin/xcrun",
+      "simctl",
+      "install",
+      "${MOOPS_SIMULATOR_UDID}",
+      "${MOOPS_DERIVED_DATA}/Build/Products/Debug-iphonesimulator/Food Delivery.app"
+    ],
+    "launch": [
+      "/usr/bin/xcrun",
+      "simctl",
+      "launch",
+      "--terminate-running-process",
+      "${MOOPS_SIMULATOR_UDID}",
+      "com.spencer..Food-Delivery"
+    ],
+    "ui": [
+      "${MOOPS_UI_ADAPTER}"
+    ]
+  },
+  "trace": [
+    {
+      "op": "wait",
+      "selector": {
+        "by": "text",
+        "value": "Populate this week"
+      },
+      "timeoutMs": 15000
+    },
+    {
+      "op": "tap",
+      "selector": {
+        "by": "label",
+        "value": "Cart"
+      }
+    },
+    {
+      "op": "wait",
+      "selector": {
+        "by": "text",
+        "value": "My cart"
+      },
+      "timeoutMs": 10000
+    }
+  ],
+  "landingPredicates": [
+    {
+      "kind": "exists",
+      "selector": {
+        "by": "text",
+        "value": "My cart"
+      }
+    },
+    {
+      "kind": "exists",
+      "selector": {
+        "by": "text",
+        "value": "Leave a comment"
+      }
+    },
+    {
+      "kind": "exists",
+      "selector": {
+        "by": "text",
+        "value": "Place my order"
+      }
+    }
+  ],
+  "fingerprint": "sha256:8a89bbb3942456bb880cc291964006911a2855da17eae6425a7ab35ccd6dbf73"
+}

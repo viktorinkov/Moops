@@ -1,0 +1,15 @@
+.DS_Store
+DerivedData/
+build/
+*.xcresult
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+node_modules/
+results/*.json
+results/*.log
+
+# The complete Jerboa design is local research context, not part of MOOPS.
+jerboa-spec*/
+docs/_local/
+
