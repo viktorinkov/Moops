@@ -16,11 +16,14 @@ const expectedWorkspace = "/tmp/codex-uitest/benchmark/FoodDelivery/Food Deliver
 const expectedTab = "windowtab-workspace";
 
 function capabilities(armId) {
-  const data = [{
-    name: "xcode",
-    pluginId: null,
-    tools: { XcodeListWindows: {}, RenderPreview: {}, BuildProject: {} },
-  }];
+  const data = [
+    { name: "codex_apps", pluginId: null, tools: { "github.search": {} } },
+    {
+      name: "xcode",
+      pluginId: null,
+      tools: { XcodeListWindows: {}, RenderPreview: {}, BuildProject: {} },
+    },
+  ];
   const marketplaces = [];
   if (armId === "codex-moops-claudemem") {
     data.push({
@@ -58,6 +61,10 @@ test("runtime inventory requires Xcode everywhere and Claude-Mem only in D", () 
     const inventory = capabilities(id);
     assert.equal(validateRuntimeCapabilities(id, inventory.mcp, inventory.plugins).xcode.tools
       .includes("RenderPreview"), true);
+    assert.deepEqual(
+      validateRuntimeCapabilities(id, inventory.mcp, inventory.plugins).ambientServers,
+      ["codex_apps"],
+    );
   }
   const contaminated = capabilities("codex-moops-claudemem");
   assert.throws(

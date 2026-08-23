@@ -66,12 +66,19 @@ export function validateRuntimeCapabilities(armId, mcpResult, pluginResult) {
     fail("E_CAPABILITY_INVENTORY", "MCP inventory was missing or paginated");
   }
   const servers = new Map(mcpResult.data.map((server) => [server.name, server]));
-  const xcode = servers.get("xcode");
+  const ambientApps = servers.get("codex_apps");
+  if (ambientApps && ambientApps.pluginId != null) {
+    fail("E_CAPABILITY_INVENTORY", `${armId} exposed codex_apps through a treatment plugin`);
+  }
+  const treatmentServers = new Map(
+    [...servers].filter(([name]) => name !== "codex_apps"),
+  );
+  const xcode = treatmentServers.get("xcode");
   const xcodeTools = Object.keys(xcode?.tools ?? {}).sort();
   if (!xcode || xcode.pluginId != null || !xcodeTools.includes("RenderPreview")) {
     fail("E_XCODE_MCP", `${armId} lacks the common Xcode MCP/RenderPreview inventory`);
   }
-  const memory = servers.get("mcp-search");
+  const memory = treatmentServers.get("mcp-search");
   const enabledPlugins = (pluginResult?.marketplaces ?? []).flatMap(({ plugins = [] }) => plugins)
     .filter(({ enabled, installed }) => enabled && installed);
   if ((pluginResult?.marketplaceLoadErrors ?? []).length !== 0) {
@@ -87,10 +94,10 @@ export function validateRuntimeCapabilities(armId, mcpResult, pluginResult) {
       || plugin.localVersion !== "13.15.3"
       || (plugin.version != null && plugin.version !== "13.15.3")
       || enabledPlugins.length !== 1
-      || servers.size !== 2) {
+      || treatmentServers.size !== 2) {
       fail("E_CLAUDE_MEM_CAPABILITY", "arm D lacks its exact Claude-Mem 13.15.3 capability set");
     }
-  } else if (memory || enabledPlugins.length !== 0 || servers.size !== 1) {
+  } else if (memory || enabledPlugins.length !== 0 || treatmentServers.size !== 1) {
     fail("E_CAPABILITY_ISOLATION", `${armId} violated Claude-Mem capability isolation`);
   }
   return {
@@ -102,6 +109,7 @@ export function validateRuntimeCapabilities(armId, mcpResult, pluginResult) {
       version: "13.15.3",
     } : null,
     enabledPlugins: enabledPlugins.map(({ id, localVersion, version }) => ({ id, localVersion, version })),
+    ambientServers: ambientApps ? ["codex_apps"] : [],
   };
 }
 
