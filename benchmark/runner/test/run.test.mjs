@@ -211,6 +211,24 @@ test("countdown emits an auditable visible 3/2/1 slate", async () => {
   assert.deepEqual(statuses, ["START IN 3", "START IN 2", "START IN 1"]);
 });
 
+test("countdown release never waits for the best-effort visual slate", async () => {
+  const values = [];
+  const result = await Promise.race([
+    emitCountdown({
+      seconds: 3,
+      startEpochMs: 123_000,
+      ledger: { emit: async (_type, data) => values.push(data.value) },
+      status: () => {},
+      sleep: async () => {},
+      onTick: async () => new Promise(() => {}),
+    }).then(() => "released"),
+    new Promise((resolve) => setTimeout(() => resolve("blocked"), 50)),
+  ]);
+
+  assert.equal(result, "released");
+  assert.deepEqual(values, [3, 2, 1]);
+});
+
 test("preserves an arm D wrapper cleanup failure and refuses its acceptance", async () => {
   const { manifest, preflightData } = await fixture({ delayMs: 20 });
   const accepted = [];

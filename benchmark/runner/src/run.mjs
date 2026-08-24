@@ -150,7 +150,12 @@ export async function emitCountdown(options) {
       startEpochMs: options.startEpochMs,
     });
     options.status(`START IN ${value}`);
-    await options.onTick?.(value);
+    try {
+      const visualTick = options.onTick?.(value);
+      Promise.resolve(visualTick).catch((cause) => options.onTickError?.(cause, value));
+    } catch (cause) {
+      options.onTickError?.(cause, value);
+    }
     await options.sleep(Math.max(0, 1_000 - (Date.now() - tickStarted)));
   }
 }

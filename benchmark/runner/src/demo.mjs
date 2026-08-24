@@ -117,7 +117,7 @@ export function buildLiveDemoPlan(manifest, options) {
       argv: [
         "/usr/bin/osascript",
         "-e",
-        `display dialog "MOOPS LIVE GOAL BENCHMARK\\nSTART IN ${value}\\n\\n${labels}" buttons {" "} default button 1 giving up after 0.5 with title "MOOPS LIVE"`,
+        `display notification "START IN ${value}\\n${labels}" with title "MOOPS LIVE GOAL BENCHMARK"`,
       ],
     })),
     layoutGuarantee: "fail-closed exact 2x2 receipt from the titled-window Accessibility probe",

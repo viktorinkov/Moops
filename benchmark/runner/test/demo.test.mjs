@@ -72,7 +72,9 @@ test("live demo plans one synchronized visual run, not a post-run replay", () =>
   assert.equal(plan.layout.argv.some((entry) => entry.endsWith("benchmark/visual/tile-simulators.mjs")), true);
   assert.deepEqual(plan.slate.map(({ value }) => value), [3, 2, 1]);
   assert.equal(plan.slate.every(({ argv }) => (
-    argv.join(" ").includes("giving up after 0.5")
+    argv.join(" ").includes("display notification")
+      && !argv.join(" ").includes("display dialog")
+      && !argv.join(" ").includes("giving up after")
   )), true);
   assert.equal(new Set(plan.launches.map(({ environment }) => (
     environment.SIMCTL_CHILD_MOOPS_BENCHMARK_START_EPOCH_MS
