@@ -237,6 +237,15 @@ system, a fresh-agent recall path, and a fair four-arm benchmark protocol. The
 result is a capability win: MOOPS covers the full path from remembered context
 to a freshly verified real-app landing after a structural rebuild.
 
+### Measured MOOPS restores
+
+Two sanitized `build-and-restore` receipts capture successful MOOPS executions:
+[`catalog-ready`](results/moops/catalog-ready-restore.json) completed build,
+replacement install, launch, replay, fresh inspection, and landing validation in
+35.56 seconds; [`checkout-ready`](results/moops/checkout-ready-restore.json)
+completed the deepest cart-to-checkout restore in 17.37 seconds. These are
+measured MOOPS restore times, not cross-arm speed ratios.
+
 ### The structural feature works in the real app
 
 FoodDelivery now contains the requested delivery-preference feature as normal

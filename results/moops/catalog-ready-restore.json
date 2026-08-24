@@ -1,0 +1,76 @@
+{
+  "reportVersion": 1,
+  "command": "build-and-restore",
+  "ok": true,
+  "provenance": {
+    "sourceReceipt": "results/catalog-ready-smoke.json",
+    "sourceReceiptSHA256": "sha256:ba4a8fb4f83a19bc706683257794b14b786a5535f356b917b3d65d9a26257a46",
+    "checkpointPath": "benchmark/checkpoints/food-delivery-catalog-ready.json",
+    "checkpointFingerprintRevalidated": true,
+    "sanitizationPolicy": "Allowlisted MOOPS report fields only; no absolute paths, environment values, process IDs, simulator IDs, or credentials are published."
+  },
+  "checkpoint": {
+    "name": "catalog-ready",
+    "fixtureVersion": "food-delivery-f4c8974",
+    "fingerprint": "sha256:f69cdbb4e1b9c3a92f16be28faff2e3bae608fec41f189ff152c2bf79ef7e5b6"
+  },
+  "phases": [
+    {
+      "name": "build",
+      "ok": true,
+      "elapsedMs": 10993.193292
+    },
+    {
+      "name": "install",
+      "ok": true,
+      "elapsedMs": 515.3576659999999
+    },
+    {
+      "name": "launch",
+      "ok": true,
+      "elapsedMs": 330.36575000000084
+    },
+    {
+      "name": "restore-and-inspect",
+      "ok": true,
+      "elapsedMs": 23714.409708
+    },
+    {
+      "name": "landing",
+      "ok": true,
+      "elapsedMs": 0.09208300000318559
+    }
+  ],
+  "timingsMs": {
+    "buildMs": 10993.193292,
+    "installMs": 515.3576659999999,
+    "launchMs": 330.36575000000084,
+    "restore-and-inspectMs": 23714.409708,
+    "landingMs": 0.09208300000318559,
+    "totalMs": 35555.138708,
+    "checkpointMs": 1.6184160000000034
+  },
+  "landing": {
+    "ok": true,
+    "results": [
+      {
+        "kind": "exists",
+        "selector": {
+          "by": "id",
+          "value": "screen.home"
+        },
+        "passed": true,
+        "matchedCount": 1
+      },
+      {
+        "kind": "exists",
+        "selector": {
+          "by": "id",
+          "value": "home.catalogReady"
+        },
+        "passed": true,
+        "matchedCount": 1
+      }
+    ]
+  }
+}

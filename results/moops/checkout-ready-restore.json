@@ -1,0 +1,100 @@
+{
+  "reportVersion": 1,
+  "command": "build-and-restore",
+  "ok": true,
+  "provenance": {
+    "sourceReceipt": "results/moops-baseline-restore.json",
+    "sourceReceiptSHA256": "sha256:225c117e55ecb88eed237b1be4264cf7fbabca50acf4cd7cac8700fc3b8edd97",
+    "checkpointPath": "benchmark/checkpoints/food-delivery-cart.json",
+    "checkpointFingerprintRevalidated": true,
+    "sanitizationPolicy": "Allowlisted MOOPS report fields only; no absolute paths, environment values, process IDs, simulator IDs, or credentials are published."
+  },
+  "checkpoint": {
+    "name": "food-delivery-cart",
+    "fixtureVersion": "food-delivery-f4c8974",
+    "fingerprint": "sha256:b4d219f9eacb7d7c0b56c94748fc656da159f8857177c88c0d9196b4b54049c0"
+  },
+  "phases": [
+    {
+      "name": "build",
+      "ok": true,
+      "elapsedMs": 4788.193625
+    },
+    {
+      "name": "install",
+      "ok": true,
+      "elapsedMs": 397.154708
+    },
+    {
+      "name": "launch",
+      "ok": true,
+      "elapsedMs": 299.0133330000008
+    },
+    {
+      "name": "restore",
+      "ok": true,
+      "elapsedMs": 11888.182958
+    },
+    {
+      "name": "inspect",
+      "ok": true,
+      "elapsedMs": 0.01783400000203983
+    },
+    {
+      "name": "landing",
+      "ok": true,
+      "elapsedMs": 0.11612500000046566
+    }
+  ],
+  "timingsMs": {
+    "buildMs": 4788.193625,
+    "installMs": 397.154708,
+    "launchMs": 299.0133330000008,
+    "restoreMs": 11888.182958,
+    "inspectMs": 0.01783400000203983,
+    "landingMs": 0.11612500000046566,
+    "totalMs": 17374.385124999997,
+    "checkpointMs": 1.5891670000000033
+  },
+  "landing": {
+    "ok": true,
+    "results": [
+      {
+        "kind": "exists",
+        "selector": {
+          "by": "id",
+          "value": "screen.cart"
+        },
+        "passed": true,
+        "matchedCount": 1
+      },
+      {
+        "kind": "exists",
+        "selector": {
+          "by": "id",
+          "value": "checkout.ready"
+        },
+        "passed": true,
+        "matchedCount": 1
+      },
+      {
+        "kind": "exists",
+        "selector": {
+          "by": "id",
+          "value": "checkout.total"
+        },
+        "passed": true,
+        "matchedCount": 1
+      },
+      {
+        "kind": "equals",
+        "selector": {
+          "by": "id",
+          "value": "checkout.placeOrder"
+        },
+        "passed": true,
+        "matchedCount": 1
+      }
+    ]
+  }
+}
