@@ -15,6 +15,9 @@ import Combine
 struct Food_DeliveryApp: App {
     @State var path = NBNavigationPath()
     private let benchmarkRun = BenchmarkRunContext.current
+    private let showLastVerification = ProcessInfo.processInfo.environment[
+        "MOOPS_SHOW_LAST_VERIFICATION"
+    ] == "1"
 
     init() {
 #if DEBUG
@@ -34,7 +37,12 @@ struct Food_DeliveryApp: App {
                         .padding(.vertical, 4)
                 }
 
-                NBNavigationStack(path: $path) {
+                if showLastVerification,
+                   let benchmarkRun,
+                   let preference = BenchmarkVerificationStore.preference(for: benchmarkRun) {
+                    BenchmarkVerifiedView(deliveryPreference: preference)
+                } else {
+                    NBNavigationStack(path: $path) {
                         IntroView()
                         
                             .nbNavigationDestination(for: Destination.self) { destination in
@@ -83,6 +91,7 @@ struct Food_DeliveryApp: App {
                                 
                             }
                     }
+                }
                 }
             }
             

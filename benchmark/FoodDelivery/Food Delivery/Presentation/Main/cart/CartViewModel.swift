@@ -8,7 +8,19 @@
 import Foundation
 
 class CartViewModel: BaseViewModel {
+    private static let deliveryPreferenceKey = "checkout.deliveryPreference"
+
     @Published var savedFoods: [FoodEntity] = []
+    @Published var deliveryPreference: DeliveryPreference {
+        didSet {
+            UserDefaults.standard.set(
+                deliveryPreference.rawValue,
+                forKey: Self.deliveryPreferenceKey
+            )
+        }
+    }
+    @Published var isOrderVerified = false
+    @Published private(set) var verifiedDeliveryPreference: DeliveryPreference?
     private let useCase = CartUseCase()
     private let foodUsecase = FoodUseCase()
     @Published var providers: [Int64: String] = [:]
@@ -27,6 +39,9 @@ class CartViewModel: BaseViewModel {
     }
     
     override init() {
+        deliveryPreference = DeliveryPreference(
+            rawValue: UserDefaults.standard.string(forKey: Self.deliveryPreferenceKey) ?? ""
+        ) ?? .leaveAtDoor
         super.init()
         Task {
             try? await fetchSavedFoods()
@@ -38,6 +53,7 @@ class CartViewModel: BaseViewModel {
     }
     
     func addOrder() async throws {
+        let submittedPreference = deliveryPreference
         do {
             await setBusy(value: true)
             var data: [String: Any] = [:]
@@ -53,10 +69,16 @@ class CartViewModel: BaseViewModel {
             data = [
                 "order_status":"process",
                 "foods":foodData,
-                "status":"published"
+                "status":"published",
+                "delivery_preference":submittedPreference.rawValue
             ]
             
             try await useCase.addOrder(with: data)
+            await MainActor.run {
+                BenchmarkVerificationStore.record(submittedPreference)
+                verifiedDeliveryPreference = submittedPreference
+                isOrderVerified = true
+            }
             await setBusy(value: false)
         } catch let error {
             await setBusy(value: false)

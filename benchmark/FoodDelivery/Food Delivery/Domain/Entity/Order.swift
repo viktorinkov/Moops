@@ -22,6 +22,7 @@ struct Order: Codable,Identifiable {
     let id: Int?
     let status, userCreated, dateCreated, userUpdated: String?
     let dateUpdated, orderStatus: String?
+    let deliveryPreference: DeliveryPreference?
     let foods: [FoodOrder]?
 
     enum CodingKeys: String, CodingKey {
@@ -31,6 +32,7 @@ struct Order: Codable,Identifiable {
         case userUpdated = "user_updated"
         case dateUpdated = "date_updated"
         case orderStatus = "order_status"
+        case deliveryPreference = "delivery_preference"
         case foods
     }
 }
@@ -73,4 +75,3 @@ struct RestaurantOrder: Codable {
         case coverImage = "cover_image"
     }
 }
-

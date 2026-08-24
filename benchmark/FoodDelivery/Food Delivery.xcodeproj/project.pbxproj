@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		A20000000000000000000003 /* BenchmarkRunContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* BenchmarkRunContext.swift */; };
 		A20000000000000000000004 /* BenchmarkHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* BenchmarkHUDView.swift */; };
+		A30000000000000000000002 /* DeliveryPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000001 /* DeliveryPreference.swift */; };
+		A30000000000000000000004 /* BenchmarkVerifiedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003 /* BenchmarkVerifiedView.swift */; };
 		B628671C2AD2FFEB000296C1 /* Order.swift in Sources */ = {isa = PBXBuildFile; fileRef = B628671B2AD2FFEB000296C1 /* Order.swift */; };
 		B62867202AD3FCE6000296C1 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B628671F2AD3FCE6000296C1 /* ForgotPasswordView.swift */; };
 		B62867232AD3FE6C000296C1 /* OtpModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B62867222AD3FE6C000296C1 /* OtpModifier.swift */; };
@@ -152,6 +154,8 @@
 		A10000000000000000000003 /* FoodDeliveryBenchmarkUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FoodDeliveryBenchmarkUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A20000000000000000000001 /* BenchmarkRunContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkRunContext.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* BenchmarkHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkHUDView.swift; sourceTree = "<group>"; };
+		A30000000000000000000001 /* DeliveryPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveryPreference.swift; sourceTree = "<group>"; };
+		A30000000000000000000003 /* BenchmarkVerifiedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkVerifiedView.swift; sourceTree = "<group>"; };
 		B628671B2AD2FFEB000296C1 /* Order.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Order.swift; sourceTree = "<group>"; };
 		B628671F2AD3FCE6000296C1 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		B62867222AD3FE6C000296C1 /* OtpModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtpModifier.swift; sourceTree = "<group>"; };
@@ -453,6 +457,7 @@
 		B67E357B2AEBB2EE00743128 /* cart */ = {
 			isa = PBXGroup;
 			children = (
+				A30000000000000000000003 /* BenchmarkVerifiedView.swift */,
 				B67E357F2AEBB31E00743128 /* CartView.swift */,
 				B67E35812AEBB33500743128 /* FoodCartItemView.swift */,
 				B67E35832AEBB34100743128 /* CartViewModel.swift */,
@@ -503,6 +508,7 @@
 			isa = PBXGroup;
 			children = (
 				B67EF6A32ACB123F0072B3D4 /* Category.swift */,
+				A30000000000000000000001 /* DeliveryPreference.swift */,
 				B67EF6A52ACB12750072B3D4 /* Food.swift */,
 				B67EF6A72ACB12C80072B3D4 /* Restaurant.swift */,
 				B67EF6A92ACB1F770072B3D4 /* Testimonial.swift */,
@@ -1021,6 +1027,8 @@
 			files = (
 				A20000000000000000000003 /* BenchmarkRunContext.swift in Sources */,
 				A20000000000000000000004 /* BenchmarkHUDView.swift in Sources */,
+				A30000000000000000000002 /* DeliveryPreference.swift in Sources */,
+				A30000000000000000000004 /* BenchmarkVerifiedView.swift in Sources */,
 				B67E353E2ADE936000743128 /* IsName.swift in Sources */,
 				B67EF6D12AD052FF0072B3D4 /* FoodUseCase.swift in Sources */,
 				B67EF6992AC346920072B3D4 /* TabIcon.swift in Sources */,
