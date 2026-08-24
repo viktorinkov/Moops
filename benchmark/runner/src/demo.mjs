@@ -269,7 +269,18 @@ export async function runLiveDemo(manifest, options = {}) {
         if (plan.runDirectory !== runDirectory) fail("E_DEMO_PATH", "runner and demo run directories diverged");
         await preflightCompositePublication(manifest);
         await mkdir(plan.demoDirectory);
-        const layout = await requireSuccess(plan.layout.argv, { timeoutMs: 30_000 });
+        let layout;
+        let layoutFailure;
+        for (let attempt = 1; attempt <= 3; attempt += 1) {
+          try {
+            layout = await requireSuccess(plan.layout.argv, { timeoutMs: 30_000 });
+            break;
+          } catch (cause) {
+            layoutFailure = cause;
+            if (attempt < 3) await delay(1_500);
+          }
+        }
+        if (!layout) throw layoutFailure;
         const layoutReceipt = JSON.parse(layout.stdout);
         if (layoutReceipt?.ok !== true || layoutReceipt.layout !== "2x2"
           || layoutReceipt.assignments?.length !== 4) {
