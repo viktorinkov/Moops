@@ -23,6 +23,7 @@ test("JXA checks the real lower-camel System Events accessibility property", asy
   assert.match(source, /systemEvents\.uiElementsEnabled\(\)/);
   assert.doesNotMatch(source, /systemEvents\.UIElementsEnabled\(\)/);
   assert.match(source, /process\.frontmost = true/);
+  assert.match(source, /visible === false/);
 });
 
 function successfulProbe(overrides = {}) {

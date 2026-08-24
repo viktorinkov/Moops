@@ -34,14 +34,19 @@ function visibleStandardWindows(systemEvents) {
   processes.forEach((process) => {
     try { process.frontmost = true; } catch (_) { /* The later window-set check fails closed. */ }
   });
-  delay(0.2);
+  // Stage Manager can take longer than one animation frame to expose windows
+  // after the process becomes frontmost. Wait through that transition so the
+  // fail-closed title check observes the real four-window set.
+  delay(1.0);
   processes.forEach((process) => {
     const processId = Number(process.unixId());
     process.windows().forEach((window, windowIndex) => {
-      let visible = true;
-      try { visible = Boolean(window.visible()); } catch (_) { /* AX window has no visible attribute. */ }
+      let visible;
+      try { visible = window.visible(); } catch (_) { /* AX window has no visible attribute. */ }
       const title = String(window.name());
-      if (!visible || title.length === 0) return;
+      // Simulator windows can report Accessibility's `missing value` rather
+      // than a Boolean. Only an explicit false is safe to treat as hidden.
+      if (visible === false || title.length === 0) return;
       result.push({ processId, windowIndex, title, window });
     });
   });
