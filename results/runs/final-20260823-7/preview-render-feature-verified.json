@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "runId": "final-20260823-7",
+  "armId": "codex-previews",
+  "label": "CODEX + PREVIEWS",
+  "tool": {
+    "server": "xcode",
+    "name": "RenderPreview",
+    "eventSequence": 4744,
+    "status": "completed",
+    "completedEpochMs": 1787534237893,
+    "wallTime": "2026-08-24T01:17:17.895Z",
+    "durationMs": 6836,
+    "argumentsSHA256": "sha256:31afe7a61783bf0f987fa9d790ac17ec8495044a50f4e35f3268aeee682eac72",
+    "resultSHA256": "sha256:b9d217ad1da5c1c62364b2129cf729c46f9c523aa70e54b4c1446c065b812039"
+  },
+  "workspaceBinding": {
+    "workspace": "/Users/viktorminchev/Development/Moops/.benchmark-runs/worktrees/codex-previews/benchmark/FoodDelivery/Food Delivery.xcodeproj",
+    "tabIdentifier": "windowtab1"
+  },
+  "image": {
+    "path": "preview-render-feature-verified.png",
+    "sha256": "sha256:32f6941f7abe9dcac3b0bd9e53107e530a4c1a71f77e744d7b8b38af4515aee0",
+    "sizeBytes": 49985,
+    "width": 689,
+    "height": 1500,
+    "content": "Green FEATURE VERIFIED Xcode Preview rendered by the Preview arm."
+  }
+}

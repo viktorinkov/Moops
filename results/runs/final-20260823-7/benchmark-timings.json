@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "runId": "final-20260823-7",
+  "model": "gpt-5.6-sol",
+  "serviceTier": "fast",
+  "baselineCommit": "016932bfeb0607ff07ef2472b180b32ea079d0a2",
+  "promptSHA256": "sha256:a2e8c6a5853a96fd35a7a8aa4d8b41e553626fe20d8427b88e3f242288b7707b",
+  "measurement": {
+    "startEpochMs": 1787530562045,
+    "startWallTime": "2026-08-24T00:16:02.045Z",
+    "definition": "Elapsed time from the shared release to the first completed exit-0 xcodebuild command containing test3DeliveryPreferenceAcceptance for each arm."
+  },
+  "arms": [
+    {
+      "armId": "codex-moops-claudemem",
+      "label": "CODEX + MOOPS + CLAUDEMEM",
+      "commandEventSequence": 2157,
+      "completedEpochMs": 1787531967297,
+      "completedWallTime": "2026-08-24T00:39:27.298Z",
+      "elapsedMs": 1405252,
+      "elapsed": "23:25.252"
+    },
+    {
+      "armId": "codex-injection",
+      "label": "CODEX + INJECTION",
+      "commandEventSequence": 2611,
+      "completedEpochMs": 1787532332293,
+      "completedWallTime": "2026-08-24T00:45:32.293Z",
+      "elapsedMs": 1770248,
+      "elapsed": "29:30.248"
+    },
+    {
+      "armId": "codex-uitest",
+      "label": "CODEX + UITEST",
+      "commandEventSequence": 2691,
+      "completedEpochMs": 1787532392141,
+      "completedWallTime": "2026-08-24T00:46:32.141Z",
+      "elapsedMs": 1830096,
+      "elapsed": "30:30.096"
+    },
+    {
+      "armId": "codex-previews",
+      "label": "CODEX + PREVIEWS",
+      "commandEventSequence": 4567,
+      "completedEpochMs": 1787534074009,
+      "completedWallTime": "2026-08-24T01:14:34.009Z",
+      "elapsedMs": 3511964,
+      "elapsed": "58:31.964"
+    }
+  ],
+  "comparisons": {
+    "moopsAheadOfNextFastestMs": 364996,
+    "moopsLessElapsedThanNextFastestPercent": 20.62,
+    "nextFastestToMoopsElapsedRatio": 1.25974,
+    "moopsAheadOfUITestMs": 424844,
+    "moopsAheadOfPreviewsMs": 2106712,
+    "previewsToMoopsElapsedRatio": 2.49917
+  },
+  "recording": {
+    "path": "../../live-demo/moops-four-arm-live.mp4",
+    "sha256": "sha256:c673043207ec1946a76d2e292dcab323e82cd1f33e06e6af4d0aedeadccdcca9",
+    "sizeBytes": 18621511,
+    "durationSeconds": 3698.3,
+    "width": 1920,
+    "height": 1080,
+    "framesPerSecond": 10,
+    "codec": "h264",
+    "pixelFormat": "yuv420p",
+    "window": "Shared release through synchronized runner completion",
+    "sourceTrimSeconds": {
+      "codex-uitest": 2,
+      "codex-previews": 62,
+      "codex-injection": 121,
+      "codex-moops-claudemem": 2
+    },
+    "layout": {
+      "topLeft": "CODEX + UITEST",
+      "topRight": "CODEX + PREVIEWS",
+      "bottomLeft": "CODEX + INJECTION",
+      "bottomRight": "CODEX + MOOPS + CLAUDEMEM"
+    }
+  }
+}

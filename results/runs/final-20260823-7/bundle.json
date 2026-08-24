@@ -1,0 +1,205 @@
+{
+  "bundleVersion": 1,
+  "runId": "final-20260823-7",
+  "sanitized": true,
+  "preserves": [
+    "wall-clock timing",
+    "monotonic timing",
+    "failures",
+    "tool and Goal events"
+  ],
+  "redacts": [
+    "credential-shaped values",
+    "authorization material",
+    "machine-specific paths"
+  ],
+  "arms": [
+    {
+      "id": "codex-uitest",
+      "label": "CODEX + UITEST",
+      "files": [
+        "arms/codex-uitest/agent.requests.jsonl",
+        "arms/codex-uitest/agent.stdout.jsonl",
+        "arms/codex-uitest/agent.stderr.log",
+        "arms/codex-uitest/arm-result.json"
+      ]
+    },
+    {
+      "id": "codex-previews",
+      "label": "CODEX + PREVIEWS",
+      "files": [
+        "arms/codex-previews/agent.requests.jsonl",
+        "arms/codex-previews/agent.stdout.jsonl",
+        "arms/codex-previews/agent.stderr.log",
+        "arms/codex-previews/arm-result.json"
+      ]
+    },
+    {
+      "id": "codex-injection",
+      "label": "CODEX + INJECTION",
+      "files": [
+        "arms/codex-injection/agent.requests.jsonl",
+        "arms/codex-injection/agent.stdout.jsonl",
+        "arms/codex-injection/agent.stderr.log",
+        "arms/codex-injection/arm-result.json"
+      ]
+    },
+    {
+      "id": "codex-moops-claudemem",
+      "label": "CODEX + MOOPS + CLAUDEMEM",
+      "files": [
+        "arms/codex-moops-claudemem/agent.requests.jsonl",
+        "arms/codex-moops-claudemem/agent.stdout.jsonl",
+        "arms/codex-moops-claudemem/agent.stderr.log",
+        "arms/codex-moops-claudemem/arm-result.json"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "summary.json",
+      "bytes": 2933157,
+      "records": null,
+      "redactions": 8090,
+      "sourceSHA256": "sha256:f1062f355e4a48935d13583d65d346d5c17ac995af9e57f9d45bf1e12b80a3a2",
+      "publishedSHA256": "sha256:8749ea226a15d6eefd46d022698bfb2ffe92af1e744af1e2cc03a13501cb08f4"
+    },
+    {
+      "path": "events.jsonl",
+      "bytes": 3361623,
+      "records": 4783,
+      "redactions": 399,
+      "sourceSHA256": "sha256:53f370f7784ea2b7685cf883e1d60a7dd889ae87441efe94cd8cf501fd015d77",
+      "publishedSHA256": "sha256:38da5dfd2a3621bf3dccb8925010bb6fda824872071e579c5fdc8c00151f92fc"
+    },
+    {
+      "path": "arms/codex-uitest/agent.requests.jsonl",
+      "bytes": 4459,
+      "records": 10,
+      "redactions": 5,
+      "sourceSHA256": "sha256:cef933d72599a69353742d2430a2892b8157fe6248c12541efec709f34c56e82",
+      "publishedSHA256": "sha256:244658831742bc5c8d5bb6f6710c6dbd440d4a19c9c8031b4aa794753bb92596"
+    },
+    {
+      "path": "arms/codex-uitest/agent.stdout.jsonl",
+      "bytes": 5888555,
+      "records": 3906,
+      "redactions": 10254,
+      "sourceSHA256": "sha256:3fe155766846a8dec3ff54ea25ae108bb8d3a8af3b05cf0024ba5457c1c4257e",
+      "publishedSHA256": "sha256:41b7de33de1f6aab6471d2135a3be4f88bb01ba505457e7fc6f1cd2ab0a4990f"
+    },
+    {
+      "path": "arms/codex-uitest/agent.stderr.log",
+      "bytes": 0,
+      "records": null,
+      "redactions": 0,
+      "sourceSHA256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "publishedSHA256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "arms/codex-uitest/arm-result.json",
+      "bytes": 507001,
+      "records": null,
+      "redactions": 1374,
+      "sourceSHA256": "sha256:cee807a074fdb591f71552ee6cdeb86564061705806c186f3e9a646845ca2226",
+      "publishedSHA256": "sha256:1e75d40d41ca62a923f5252e522c21fdc3d70f6d5945af0aa8f61957eedbcd6d"
+    },
+    {
+      "path": "arms/codex-previews/agent.requests.jsonl",
+      "bytes": 4486,
+      "records": 10,
+      "redactions": 5,
+      "sourceSHA256": "sha256:7e01fe21faabe4c9ad2a83812cc4d363ed2fe4a7a23409363db86c290f1b216c",
+      "publishedSHA256": "sha256:0ca687f54e13f4b345be3f9dcc1e94f0ccf9cfb96ed03d0b585885615633feac"
+    },
+    {
+      "path": "arms/codex-previews/agent.stdout.jsonl",
+      "bytes": 4081732,
+      "records": 4379,
+      "redactions": 5118,
+      "sourceSHA256": "sha256:ed92441fe3c3dbc272b6b03e5bf8b3a77985bf10020f9ea3b326a0702f4f7065",
+      "publishedSHA256": "sha256:41a3b1f6d9e84bb8e57aa0e6444c8a4672115f650a287fc03d57862bdc74393d"
+    },
+    {
+      "path": "arms/codex-previews/agent.stderr.log",
+      "bytes": 0,
+      "records": null,
+      "redactions": 0,
+      "sourceSHA256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "publishedSHA256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "arms/codex-previews/arm-result.json",
+      "bytes": 653220,
+      "records": null,
+      "redactions": 2176,
+      "sourceSHA256": "sha256:dc6ab1246f54b85448bf585e2e92fc454d43e3a0f6fd360792c1eb511f145147",
+      "publishedSHA256": "sha256:6ce5ba289fb470d1cc891d08272f6694fceb64c68b0359417821819794c3ba73"
+    },
+    {
+      "path": "arms/codex-injection/agent.requests.jsonl",
+      "bytes": 4739,
+      "records": 10,
+      "redactions": 5,
+      "sourceSHA256": "sha256:6a14bae188bfcdcc4bff96b117aa45b7d9c9303af0a087f4ce3c203f0725beb5",
+      "publishedSHA256": "sha256:ef3578bc87e0b943e487ad5e2f300e5d69a5501a701c660d39e6f7e21bddeecd"
+    },
+    {
+      "path": "arms/codex-injection/agent.stdout.jsonl",
+      "bytes": 24174084,
+      "records": 6973,
+      "redactions": 17489,
+      "sourceSHA256": "sha256:1454aa5112f3df956703bba3d323dedf44979ecbe87c18f6e7f162bf6f26ad9e",
+      "publishedSHA256": "sha256:c293c718712cf58987291ae72f2c228c27ea479769de344a5edc0768d0c9031a"
+    },
+    {
+      "path": "arms/codex-injection/agent.stderr.log",
+      "bytes": 0,
+      "records": null,
+      "redactions": 0,
+      "sourceSHA256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "publishedSHA256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "arms/codex-injection/arm-result.json",
+      "bytes": 1529150,
+      "records": null,
+      "redactions": 4295,
+      "sourceSHA256": "sha256:cb6fce46f98a290ce280d2d941a8b0063a138946f70ac2341aa04c2a8f4e749a",
+      "publishedSHA256": "sha256:3d3e989aa3f95b36e4be1308742a5a86571be2a18d91ea86dc3f86112255127a"
+    },
+    {
+      "path": "arms/codex-moops-claudemem/agent.requests.jsonl",
+      "bytes": 5156,
+      "records": 10,
+      "redactions": 5,
+      "sourceSHA256": "sha256:20d8e56402f94daa804f6cf0f1b7530514b951c76cccda36ef6e421639cdc2fe",
+      "publishedSHA256": "sha256:671b5df1b3ec80c9c01f1806d54daab5551540ead92e4a3ccef8875b793fdd3b"
+    },
+    {
+      "path": "arms/codex-moops-claudemem/agent.stdout.jsonl",
+      "bytes": 2215279,
+      "records": 2549,
+      "redactions": 649,
+      "sourceSHA256": "sha256:6f475d8ba55abcce8f0bc5caf043671cb0fd046c55dd63d2dfc35ea322fbb5c0",
+      "publishedSHA256": "sha256:a7ba1a6d24e30db3d23b4cac6def202a07b13ae60d9aa5d2721ae42c8605fa80"
+    },
+    {
+      "path": "arms/codex-moops-claudemem/agent.stderr.log",
+      "bytes": 136,
+      "records": null,
+      "redactions": 0,
+      "sourceSHA256": "sha256:32e2c8b499bcca70b7f1674e58c9ab76a02400e84b28a2e01e59840e966abad7",
+      "publishedSHA256": "sha256:32e2c8b499bcca70b7f1674e58c9ab76a02400e84b28a2e01e59840e966abad7"
+    },
+    {
+      "path": "arms/codex-moops-claudemem/arm-result.json",
+      "bytes": 209832,
+      "records": null,
+      "redactions": 232,
+      "sourceSHA256": "sha256:77ea7387b90458cd2b390a2e9142c81235762bc5af1db8047c26953b87ebaa4d",
+      "publishedSHA256": "sha256:b6a59b5cc10904396d6a525d6817174664cf8599a11ce18ab10b1ee30694d080"
+    }
+  ],
+  "totalRedactions": 50096
+}

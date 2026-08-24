@@ -1,6 +1,21 @@
 # MOOPS
 
-[![MOOPS cow wordmark on a black background](docs/assets/moops-hero.png)](docs/assets/moops-hero.png)
+[![MOOPS cow wordmark on a black background](docs/assets/moops-hero.png)](https://github.com/viktorinkov/Moops/raw/refs/heads/main/results/live-demo/moops-four-arm-live.mp4)
+
+## [▶ Watch the four-arm live benchmark](https://github.com/viktorinkov/Moops/raw/refs/heads/main/results/live-demo/moops-four-arm-live.mp4)
+
+Four synchronized Codex agents build and verify the same real iOS feature in one continuous run.
+
+**Four live setups:** `CODEX + UITEST` · `CODEX + PREVIEWS` ·
+`CODEX + INJECTION` · `CODEX + MOOPS + CLAUDEMEM`
+
+| Recording position | Left | Right |
+| --- | --- | --- |
+| Top | `CODEX + UITEST` | **`CODEX + PREVIEWS`** |
+| Bottom | `CODEX + INJECTION` | `CODEX + MOOPS + CLAUDEMEM` |
+
+The canonical artifact is a continuous **1:01:38.300, 1920×1080 H.264 MP4**
+aligned to the shared release, with a shared-epoch elapsed-time HUD on every arm.
 
 I currently work as a research software engineer at the Snyder Lab at Stanford,
 where I develop the native Android and iOS apps for StudySync, a wearable health
@@ -232,107 +247,10 @@ The benchmark measures:
 - failed phase and stable error code; and
 - final XCUITest and backend receipt result.
 
-## Results: MOOPS wins the recovery contract
+### Recovery-contract diagnostic matrix
 
-The result is clear: MOOPS now has a complete structural iOS feature, an executable checkpoint
-system, a fresh-agent recall path, and a fair four-arm benchmark protocol. The
-result is a capability win: MOOPS covers the full path from remembered context
-to a freshly verified real-app landing after a structural rebuild.
-
-### Measured MOOPS restores
-
-Two sanitized `build-and-restore` receipts capture successful MOOPS executions:
-[`catalog-ready`](results/moops/catalog-ready-restore.json) completed build,
-replacement install, launch, replay, fresh inspection, and landing validation in
-35.56 seconds; [`checkout-ready`](results/moops/checkout-ready-restore.json)
-completed the deepest cart-to-checkout restore in 17.37 seconds. These are
-measured MOOPS restore times, not cross-arm speed ratios.
-
-### The structural feature works in the real app
-
-FoodDelivery now contains the requested delivery-preference feature as normal
-production code, not a Preview-only or test-only substitute:
-
-- [`DeliveryPreference`](benchmark/FoodDelivery/Food%20Delivery/Domain/Entity/DeliveryPreference.swift)
-  is a new Swift domain type with exactly `Leave at door` and `Meet at door`;
-- the real checkout screen exposes the accessible
-  `checkout.deliveryPreference` control;
-- the selected value is saved in `UserDefaults`, so it survives terminate and
-  relaunch for the same installed app;
-- `Order` decodes `delivery_preference`, and the real order request sends the
-  selected raw value to the deterministic HTTP backend;
-- the green `FEATURE VERIFIED` screen appears only after the order request
-  succeeds and carries the current benchmark arm label; and
-- persisted verification is tied to the exact benchmark run ID, so an old run
-  cannot be presented as current evidence.
-
-The current source passes both a normal Xcode application build and
-`build-for-testing` for the shared `FoodDeliveryBenchmark` scheme. The
-[acceptance flow](benchmark/FoodDelivery/FoodDeliveryBenchmarkUITests/BenchmarkFlowUITests.swift)
-compiles with the app and checks preference selection, persistence across
-relaunch, the backend receipt, the labeled verification screen, and rejection
-of a receipt from another run.
-
-### MOOPS restores three useful levels of real context
-
-MOOPS has three executable, fingerprinted checkpoints rather than one hardcoded
-deep link:
-
-| Checkpoint | Context preserved by the real systems | Fresh landing proof |
-| --- | --- | --- |
-| [`catalog-ready`](benchmark/checkpoints/food-delivery-catalog-ready.json) | Authenticated app plus backend catalog and prices | Home and catalog accessibility nodes exist |
-| [`cart-ready`](benchmark/checkpoints/food-delivery-cart-ready.json) | The same session/catalog plus the persisted Core Data cart | Home reports the exact two-item cart |
-| [`checkout-ready`](benchmark/checkpoints/food-delivery-cart.json) | The same installed data, ready for the shortest route into checkout | Cart and checkout nodes exist and Place Order is enabled |
-
-Every checkpoint declares the fixture, app, simulator binding, literal adapter
-argv, public replay trace, fresh landing predicates, and canonical SHA-256
-fingerprint. `tools/moops/moops build-and-restore` validates that descriptor,
-builds, installs the replacement binary without uninstalling app data, launches
-the bundle, replays the public route, obtains a new accessibility tree, and
-checks every predicate. It stops at the first failed phase and returns a
-versioned report the external Goal can use as its next observation.
-
-The important result is that MOOPS preserves ownership instead of copying fake
-state into the checkpoint:
-
-- the installed app owns the authenticated session, saved preference, and Core
-  Data cart;
-- the local HTTP backend owns restaurants, menu items, prices, and the order
-  receipt;
-- the app reconstructs its own runtime objects after the new binary launches;
-- XCUITest reconstructs navigation through public controls; and
-- fresh accessibility plus the backend receipt determine success.
-
-This is what makes the checkpoints valid across a structural change. A new
-Swift file, stored property, or domain-model shape can require a normal rebuild,
-but it does not require MOOPS to invent a parallel Preview session or serialize
-process memory.
-
-### Fresh Codex can recover the checkpoint through Claude-Mem
-
-The [Claude-Mem registry](benchmark/claude-mem/checkpoints.json) records the
-three checkpoint names, paths, and exact fingerprints. A new helper process
-must use `search → timeline → get_observations`, return all three identities,
-select the deepest useful checkpoint, and pass the selected file back through
-MOOPS validation. Run-scoped storage, distinct process identity, unchanged
-worker identity, and graceful shutdown are all checked.
-
-This gives the Goal a clean separation of responsibilities:
-
-```text
-Claude-Mem recalls which verified context matters
-→ MOOPS validates and reconstructs that context
-→ the real app, fresh UI, and backend receipt prove it still holds
-```
-
-Claude-Mem never stands in for simulator state, and MOOPS never treats a memory
-record as proof that the current app is correct.
-
-### MOOPS uniquely covers the complete recovery contract
-
-The benchmark treatments are useful for different kinds of feedback. MOOPS
-outperformed on capability coverage because it is the only arm that satisfies
-every recovery requirement at once:
+The benchmark treatments expose different recovery surfaces. This matrix is a
+design diagnostic, separate from the timed results below:
 
 | Required capability | UI automation | Xcode Preview | InjectionIII | MOOPS + Claude-Mem |
 | --- | --- | --- | --- | --- |
@@ -353,22 +271,6 @@ is excellent for compatible in-process edits, but this benchmark deliberately
 adds a source file and changes stored/domain state. MOOPS combines the real-app
 truth of UI automation with a durable, externally recallable resume contract.
 
-### Build, contract, and orchestration evidence
-
-The submission has **118 passing contract tests**:
-
-- 25 MOOPS tests for descriptor validation, fingerprinting, literal argv,
-  ordered restore phases, fresh UI inspection, and fail-closed behavior;
-- 10 backend tests for deterministic catalog/auth data, validated orders,
-  receipts, assets, and reset behavior;
-- 24 Claude-Mem tests for fresh recall, fingerprint identity, store isolation,
-  ordered MCP use, and worker lifecycle;
-- 13 InjectionIII tests for the pinned 5.2.1 runtime, watcher and connection
-  evidence, injection attempts, and structural fallback; and
-- 46 runner tests for common controls, isolated homes/worktrees/simulators/
-  DerivedData/backends/results, durable Goals, acceptance, recording,
-  transcripts, cleanup, and failure propagation.
-
 The four-arm protocol gives each arm its own worktree, simulator, DerivedData,
 backend port, results directory, and isolated Codex home. All four use Apple's
 official Xcode MCP through `/usr/bin/xcrun mcpbridge`, bound to a distinct Xcode
@@ -377,41 +279,280 @@ service tier request, baseline commit, deterministic fixture, three-hour
 deadline, durable Goal objective, and final XCUITest/backend receipt gate. Only
 the intended treatment differs.
 
-The [take-4 staging recording](results/live-demo/moops-four-arm-staging-take4.mp4)
-and [redacted transcripts](results/runs/final-20260823-4/) show the live protocol
-bringing up four labeled simulators, isolated Codex homes, four backends, the
-official Xcode MCP bindings, InjectionIII and Claude-Mem preflights, and four
-identical durable Goals. Every Goal reached verified `paused` state with zero
-usage, and all four arms reached the common ready barrier. The take is retained
-as staging and fail-closed orchestration evidence; it does not claim that the
-four agents completed the feature.
+## Results: MOOPS reaches the shared real-app gate first
 
-**Result boundary:** MOOPS uniquely covered every required recovery capability;
-a completed multi-take study is the next step for assigning a numeric
-wall-clock speedup to that advantage.
+### [▶ Video proof: watch the canonical four-arm live benchmark](https://github.com/viktorinkov/Moops/raw/refs/heads/main/results/live-demo/moops-four-arm-live.mp4)
+
+The canonical recording shows the synchronized release, four isolated Codex
+agents, four labeled real simulator apps, shared-epoch timers, and the visible
+verification milestones in one continuous run.
+
+**Read the 2×2 recording:** UITEST is top-left, **PREVIEWS is top-right**,
+INJECTION is bottom-left, and MOOPS + CLAUDEMEM is bottom-right. Each tile has
+its treatment label and shared-epoch elapsed timer.
+
+<a href="https://github.com/viktorinkov/Moops/raw/refs/heads/main/results/live-demo/moops-four-arm-live.mp4">
+  <img src="results/live-demo/moops-four-arm-start.png" alt="The four synchronized labeled iOS simulators: UITEST top-left, PREVIEWS top-right, INJECTION bottom-left, and MOOPS plus Claude-Mem bottom-right">
+</a>
+
+### Live take 7
+
+Arm D, `CODEX + MOOPS + CLAUDEMEM`, recorded the first exit-0 execution of the
+shared real-app acceptance test **23 minutes 25.252 seconds** after synchronized
+release.
+
+| Arm | Treatment | Exit-0 shared acceptance time |
+| --- | --- | ---: |
+| D | `CODEX + MOOPS + CLAUDEMEM` | **23:25.252** |
+| C | `CODEX + INJECTION` | 29:30.248 |
+| A | `CODEX + UITEST` | 30:30.096 |
+| B | `CODEX + PREVIEWS` | 58:31.964 |
+
+The exact timestamps, event sequence numbers, comparison arithmetic, video
+properties, and SHA-256 are preserved in the
+[machine-readable timing receipt](results/runs/final-20260823-7/benchmark-timings.json).
+The complete [redacted four-arm transcript bundle](results/runs/final-20260823-7/)
+preserves every agent request, response, command receipt, MCP event, and arm
+result for independent inspection.
+
+Arm D reached the common gate **6 minutes 4.996 seconds** ahead of the
+next-fastest result. That is **20.62% less elapsed time**, or the same verified
+outcome about **1.26× sooner**. Each measurement begins at the shared
+`startEpochMs` release and ends when the actual `xcodebuild` command for
+`test3DeliveryPreferenceAcceptance` completes with exit 0.
+
+Against the UI-automation arm, MOOPS reached the same gate **7 minutes 4.844
+seconds sooner**. Against the Preview arm, MOOPS reached it **35 minutes 6.712
+seconds sooner**, approximately **2.50× sooner**.
+
+`CODEX + PREVIEWS` also completed the full ordered four-test suite and rendered
+the feature Preview through Apple’s official Xcode MCP.
+
+#### Arm B Preview evidence
+
+<a href="results/runs/final-20260823-7/preview-render-feature-verified.png">
+  <img src="results/runs/final-20260823-7/preview-render-feature-verified.png" width="260" alt="Green FEATURE VERIFIED screen rendered by the CODEX + PREVIEWS arm through Xcode MCP">
+</a>
+
+The [RenderPreview receipt](results/runs/final-20260823-7/preview-render-feature-verified.json)
+binds this image to Arm B, Xcode MCP event 4744, the Preview arm’s exact project
+tab, and the image SHA-256.
+
+### What the shared acceptance proved
+
+The 66.295-second Arm D XCUITest exercised the complete real-app acceptance
+path:
+
+1. Launch the installed app with its persisted authenticated session.
+2. Load the catalog and prices from the arm's isolated HTTP backend.
+3. Reacquire the persisted Core Data cart through the public Home-to-Cart path.
+4. Change `checkout.deliveryPreference` to `Meet at door`.
+5. Terminate and relaunch the app, then confirm the saved selection.
+6. Place the real order and inspect the backend receipt.
+7. Reach the green `FEATURE VERIFIED` screen with the Arm D label.
+8. Demonstrate run-scoped verification with a second run ID, then relaunch and
+   restore the result associated with the current run identity.
+
+The independent backend receipt records the exact request:
+`delivery_preference: "Meet at door"`, `order_status: "process"`,
+`status: "published"`, and two units of food `id: 1`. The normalized order is
+order `101`: two Cheese Burgers at **$4.00 each** from **Wendy’s**, with the same
+delivery preference. The app's visible result, XCUITest assertions, and backend
+receipt all describe the same accepted journey.
+
+The implementation is normal application code:
+
+- [`DeliveryPreference`](benchmark/FoodDelivery/Food%20Delivery/Domain/Entity/DeliveryPreference.swift)
+  defines the two user-visible choices;
+- the real checkout screen publishes the accessible control;
+- `UserDefaults` retains the selection across process launches;
+- Core Data retains the cart across replacement builds;
+- `Order` decodes and submits `delivery_preference`; and
+- the run-scoped verification receipt restores the green result for the current
+  benchmark identity.
+
+The source passes a normal Xcode application build and `build-for-testing` for
+the shared `FoodDeliveryBenchmark` scheme. The
+[acceptance flow](benchmark/FoodDelivery/FoodDeliveryBenchmarkUITests/BenchmarkFlowUITests.swift)
+ships with the fixture and checks the same state, request, receipt, and visible
+result.
+
+### What MOOPS and Claude-Mem add
+
+MOOPS exposes three executable, fingerprinted levels of real app context:
+
+| Checkpoint | Context owned by the real systems | Fresh landing proof |
+| --- | --- | --- |
+| [`catalog-ready`](benchmark/checkpoints/food-delivery-catalog-ready.json) | Authenticated app plus backend catalog and prices | Home and catalog accessibility nodes exist |
+| [`cart-ready`](benchmark/checkpoints/food-delivery-cart-ready.json) | The same session and catalog plus the persisted Core Data cart | Home reports the exact two-item cart |
+| [`checkout-ready`](benchmark/checkpoints/food-delivery-cart.json) | The same installed data at the shortest public route into checkout | Cart and checkout nodes exist and Place Order is enabled |
+
+Every checkpoint declares the fixture, app, simulator binding, literal adapter
+argv, public replay trace, fresh landing predicates, and canonical SHA-256
+fingerprint. `tools/moops/moops build-and-restore` validates the descriptor,
+builds the app, performs a replacement install that preserves its container,
+launches the bundle, replays the public route, obtains a new accessibility tree,
+and evaluates every landing predicate.
+
+Two sanitized receipts measure those restores directly:
+
+- [`catalog-ready`](results/moops/catalog-ready-restore.json) completes build,
+  replacement install, launch, replay, fresh inspection, and landing validation
+  in **35.56 seconds**.
+- [`checkout-ready`](results/moops/checkout-ready-restore.json) completes the
+  deepest cart-to-checkout restore in **17.37 seconds**.
+
+The [Claude-Mem](https://github.com/thedotmack/claude-mem) integration uses a
+[checkpoint registry](benchmark/claude-mem/checkpoints.json) that stores the
+three checkpoint names, paths, and exact fingerprints. Fresh Codex retrieves
+them through `search → timeline → get_observations`, selects `checkout-ready`,
+and hands the descriptor back to MOOPS for live validation and restoration.
+
+```text
+Claude-Mem recalls the verified context
+→ MOOPS rebuilds and restores it
+→ fresh UI plus the backend receipt verify the current app
+```
+
+The state boundary stays explicit: the app owns its authenticated session,
+`UserDefaults` preference, and Core Data cart; the backend owns the catalog,
+prices, and order receipt; XCUITest reconstructs ephemeral navigation through
+public controls; and accessibility provides a fresh observation after launch.
+In the synchronized live take, this combined treatment reached the shared gate
+first.
+
+### Engineering evidence
+
+The repository has **126 passing contract tests**, plus a real Claude-Mem
+runtime lifecycle smoke test:
+
+- 25 MOOPS tests for descriptor validation, fingerprinting, literal argv,
+  ordered restore phases, fresh UI inspection, and evidence-gated execution;
+- 10 backend tests for deterministic catalog and authentication data, validated
+  orders, receipts, assets, and reset behavior;
+- 25 Claude-Mem tests for fresh recall, fingerprint identity, store isolation,
+  ordered MCP use, and worker lifecycle;
+- 13 InjectionIII tests for the pinned 5.2.1 runtime, watcher and connection
+  evidence, injection event capture, and structural rebuild handling; and
+- 53 runner tests for common controls, isolated homes, worktrees, simulators,
+  DerivedData, backends, results, durable Goals, acceptance, recording,
+  transcripts, cleanup, and evidence propagation.
+
+The four-arm runner isolates each treatment's app data, build products, backend,
+agent home, transcript, and result artifacts. Apple's official Xcode MCP runs
+through `/usr/bin/xcrun mcpbridge`, Claude-Mem provides the fresh-agent memory
+path, and the shared XCUITest plus backend receipt define one common finish
+line.
+
+### What this unlocks
+
+- **For iOS developers:** MOOPS turns a deep real-app state into a reusable
+  developer checkpoint. Teams can add checkpoints and direct-argv adapters for
+  their own apps through the open checkpoint schema and UI adapter protocol.
+- **For agent training:** verified checkpoints create reusable starting states
+  for more edit, build, restore, inspect, and reward cycles within the same
+  compute budget.
+- **For agent evaluation:** fingerprints, isolated backends, fresh accessibility,
+  and backend receipts make native iOS tasks reproducible and evidence-based.
+- **For engineering organizations:** agents and CI can return to authenticated,
+  data-rich product flows quickly, shortening feedback on checkout, onboarding,
+  account, and other stateful journeys.
+- **For the open-source ecosystem:** Claude-Mem supplies portable continuity,
+  MOOPS supplies deterministic restoration, and any compatible iOS project can
+  define its own state ownership, replay route, and landing evidence.
 
 ## Impact
 
-Real stateful iOS environments are expensive to restart. That limits how many
-valid mobile trajectories a training or evaluation system can collect.
+Real stateful iOS work is dominated by more than compilation. An agent must
+recover an authenticated session, deterministic backend data, persistent app
+state, and the right navigation depth before it can observe whether an edit
+worked. Repeating that setup consumes simulator time, agent tokens, and the
+limited wall-clock budget of every training rollout or evaluation task.
 
-MOOPS aims to make the verification loop cheaper:
+MOOPS turns that repeated setup into a verified starting state:
 
 ```text
 edit → build → restore → agent inspects and verifies → reward
 ```
 
-Potential impact:
+The reward still comes from the real product journey: fresh accessibility,
+persisted app state, an actual backend request, and a visible accepted result.
+The checkpoint only shortens the path back to the place where useful work can
+continue. That distinction makes the restored trajectory suitable for both
+developer agents and evidence-based evaluation.
 
-- more verified rollouts per hour;
-- shorter time to fresh real-app feedback; and
-- lower cost per accepted trajectory.
+### Faster reinforcement-learning and evaluation loops
 
-The implemented checkpoint, recall, restore, and evidence contracts establish
-the prerequisite for that training-speed gain. Repeated timed runs can now
-measure how many additional verified trajectories the recovered context buys.
+MOOPS does not embed or train an LLM. It supplies infrastructure that can make
+future Codex reinforcement-learning loops faster by increasing the number of
+real, verified mobile trajectories collectable under a fixed compute budget.
+When environment reconstruction becomes cheaper, the same simulator fleet and
+agent budget can spend more of each rollout on editing, observing, correcting,
+and reaching a reward.
+
+That creates four compounding advantages:
+
+- **Higher rollout throughput:** more edit/build/verify attempts per
+  simulator-hour.
+- **Denser useful rewards:** more trajectories reach deep authenticated states
+  where meaningful cross-screen and backend behavior can be judged.
+- **Harder mobile curricula:** training can begin from catalog, populated-cart,
+  or checkout checkpoints instead of repeatedly spending the trajectory on
+  login and setup.
+- **Reproducible comparisons:** the checkpoint fingerprint, backend fixture,
+  replay trace, accessibility evidence, and receipt make the starting and
+  finishing conditions inspectable.
+
+The live result demonstrates the practical direction: the MOOPS arm reached the
+shared real-app acceptance command at **23:25.252**, **6:04.996 ahead** of the
+next-fastest treatment, using **20.62% less elapsed time**. The separate restore
+receipts also show a complete `catalog-ready` replacement-build recovery in
+**35.56 seconds** and the deeper `checkout-ready` recovery in **17.37 seconds**.
+
+### Business value
+
+For an AI coding platform, the core economic unit is not generated code; it is
+an accepted trajectory backed by trustworthy evidence. MOOPS can improve that
+unit by reducing setup work before every mobile verification attempt. At scale,
+that can mean:
+
+- lower simulator-fleet cost per accepted iOS task;
+- faster benchmark feedback when a model, prompt, or tool policy changes;
+- more difficult stateful examples within the same training run;
+- shorter agent turnaround for checkout, onboarding, account, and other deep
+  product flows; and
+- reusable regression-reproduction states for testing and model
+  improvement.
+
+For an iOS engineering organization, the same mechanism becomes developer
+infrastructure. A team can version a small set of high-value checkpoints,
+connect them to deterministic local services, and give both humans and agents a
+repeatable route back to expensive application states. Claude-Mem adds portable
+recall across fresh agent sessions; MOOPS validates and executes the real-app
+restore; XCUITest, accessibility, and backend receipts provide the reward
+evidence.
+
+### An open measurement surface
+
+Because the runner stores synchronized clocks, exact commands, transcripts,
+checkpoint fingerprints, restore phase timings, and backend receipts, future
+experiments can measure the quantities that matter:
+
+- accepted trajectories per simulator-hour;
+- median time from rebuild to fresh deep-state observation;
+- agent tokens and compute cost per accepted feature;
+- reward density at progressively deeper checkpoints; and
+- transfer of the same MOOPS adapter contract across real iOS repositories.
+
+This makes MOOPS useful beyond one demo. It is a small open-source foundation
+for testing how durable real-app context changes native-agent capability,
+training throughput, and the economics of verified mobile software work.
 
 ## Attribution
+
+MOOPS is inspired by
+[Jerboa](https://github.com/yasenhorozov/jerboa/commits/main/), which is focused
+on Android.
 
 MOOPS is MIT licensed. The FoodDelivery fixture is a modified benchmark copy of
 [spencer2k19/FoodDelivery](https://github.com/spencer2k19/FoodDelivery) at
