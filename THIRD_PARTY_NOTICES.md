@@ -15,3 +15,12 @@ MOOPS modifies the fixture for deterministic local networking, public
 accessibility automation, checkpoint restoration, benchmark timing, and the
 shared feature acceptance test. The upstream project is not responsible for
 those changes or for MOOPS benchmark results.
+
+## Diagram product marks
+
+The README diagram uses the official Node.js icon from the
+[Node.js branding page](https://nodejs.org/en/about/branding/) and the Xcode app
+icon from the installed Xcode application bundle.
+
+Node.js and Xcode are trademarks of their respective owners. Their appearance
+does not imply endorsement of MOOPS.
