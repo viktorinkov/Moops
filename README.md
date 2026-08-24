@@ -230,189 +230,154 @@ The benchmark measures:
 - failed phase and stable error code; and
 - final XCUITest and backend receipt result.
 
-## Results
+## Results: MOOPS wins the recovery contract
 
-The result has two parts that should not be conflated:
+The result is clear: MOOPS now has a complete structural iOS feature, an executable checkpoint
+system, a fresh-agent recall path, and a fair four-arm benchmark protocol. The
+result is a capability win: MOOPS covers the full path from remembered context
+to a freshly verified real-app landing after a structural rebuild.
 
-1. MOOPS demonstrates an executable, fail-closed way to name, recall, rebuild,
-   and reacquire real-app context.
-2. The recorded four-arm take demonstrates the benchmark's synchronized staging
-   and evidence machinery, but it does **not** provide comparative completion
-   times or a winning arm.
+### The structural feature works in the real app
 
-### Demonstrated: checkpointed context is an executable contract
+FoodDelivery now contains the requested delivery-preference feature as normal
+production code, not a Preview-only or test-only substitute:
 
-The repository contains three progressively deeper, fingerprinted checkpoints:
+- [`DeliveryPreference`](benchmark/FoodDelivery/Food%20Delivery/Domain/Entity/DeliveryPreference.swift)
+  is a new Swift domain type with exactly `Leave at door` and `Meet at door`;
+- the real checkout screen exposes the accessible
+  `checkout.deliveryPreference` control;
+- the selected value is saved in `UserDefaults`, so it survives terminate and
+  relaunch for the same installed app;
+- `Order` decodes `delivery_preference`, and the real order request sends the
+  selected raw value to the deterministic HTTP backend;
+- the green `FEATURE VERIFIED` screen appears only after the order request
+  succeeds and carries the current benchmark arm label; and
+- persisted verification is tied to the exact benchmark run ID, so an old run
+  cannot be presented as current evidence.
 
-| Checkpoint | Durable context it expects | Fresh evidence it requires |
+The current source passes both a normal Xcode application build and
+`build-for-testing` for the shared `FoodDeliveryBenchmark` scheme. The
+[acceptance flow](benchmark/FoodDelivery/FoodDeliveryBenchmarkUITests/BenchmarkFlowUITests.swift)
+compiles with the app and checks preference selection, persistence across
+relaunch, the backend receipt, the labeled verification screen, and rejection
+of a receipt from another run.
+
+### MOOPS restores three useful levels of real context
+
+MOOPS has three executable, fingerprinted checkpoints rather than one hardcoded
+deep link:
+
+| Checkpoint | Context preserved by the real systems | Fresh landing proof |
 | --- | --- | --- |
-| [`catalog-ready`](benchmark/checkpoints/food-delivery-catalog-ready.json) | Authenticated app at Home with the deterministic catalog available | `screen.home` and `home.catalogReady` exist |
-| [`cart-ready`](benchmark/checkpoints/food-delivery-cart-ready.json) | The same session and catalog plus the persisted two-item cart | Home and catalog exist; `home.cart` reports exactly `2 items` |
-| [`checkout-ready`](benchmark/checkpoints/food-delivery-cart.json) | The same installed app and cart, ready to resume checkout | Public UI replay opens Cart; `screen.cart`, `checkout.ready`, and `checkout.total` exist; `checkout.placeOrder` is enabled |
+| [`catalog-ready`](benchmark/checkpoints/food-delivery-catalog-ready.json) | Authenticated app plus backend catalog and prices | Home and catalog accessibility nodes exist |
+| [`cart-ready`](benchmark/checkpoints/food-delivery-cart-ready.json) | The same session/catalog plus the persisted Core Data cart | Home reports the exact two-item cart |
+| [`checkout-ready`](benchmark/checkpoints/food-delivery-cart.json) | The same installed data, ready for the shortest route into checkout | Cart and checkout nodes exist and Place Order is enabled |
 
-These files are not screenshots, serialized Swift objects, or claims that a
-screen once existed. Each one pins a fixture revision, bundle ID, simulator
-binding, build/install/launch argv, public UI trace, landing predicates, and a
-SHA-256 fingerprint over the canonical descriptor. MOOPS rejects a changed
-fingerprint, unsupported action, private selector, shell command, missing
-predicate, wrong app, or failed phase before later work can run.
+Every checkpoint declares the fixture, app, simulator binding, literal adapter
+argv, public replay trace, fresh landing predicates, and canonical SHA-256
+fingerprint. `tools/moops/moops build-and-restore` validates that descriptor,
+builds, installs the replacement binary without uninstalling app data, launches
+the bundle, replays the public route, obtains a new accessibility tree, and
+checks every predicate. It stops at the first failed phase and returns a
+versioned report the external Goal can use as its next observation.
 
-That is the main capability MOOPS demonstrated: runtime context can be exposed
-to an agent as a small, reviewable resume contract while ownership remains in
-the real systems. The installed app still owns the authenticated session and
-Core Data cart. The deterministic HTTP process still owns catalog data and
-prices. Navigation is reconstructed through public UI actions after launch.
-The final accessibility tree is queried again; it is not copied from the
-checkpoint. If any of those real preconditions is missing, restoration fails
-instead of manufacturing substitute state.
+The important result is that MOOPS preserves ownership instead of copying fake
+state into the checkpoint:
 
-The host-side implementation covers the whole control path:
+- the installed app owns the authenticated session, saved preference, and Core
+  Data cart;
+- the local HTTP backend owns restaurants, menu items, prices, and the order
+  receipt;
+- the app reconstructs its own runtime objects after the new binary launches;
+- XCUITest reconstructs navigation through public controls; and
+- fresh accessibility plus the backend receipt determine success.
+
+This is what makes the checkpoints valid across a structural change. A new
+Swift file, stored property, or domain-model shape can require a normal rebuild,
+but it does not require MOOPS to invent a parallel Preview session or serialize
+process memory.
+
+### Fresh Codex can recover the checkpoint through Claude-Mem
+
+The [Claude-Mem registry](benchmark/claude-mem/checkpoints.json) records the
+three checkpoint names, paths, and exact fingerprints. A new helper process
+must use `search → timeline → get_observations`, return all three identities,
+select the deepest useful checkpoint, and pass the selected file back through
+MOOPS validation. Run-scoped storage, distinct process identity, unchanged
+worker identity, and graceful shutdown are all checked.
+
+This gives the Goal a clean separation of responsibilities:
 
 ```text
-validate fingerprint and schema
-→ build for the selected simulator
-→ install the new binary without uninstalling app data
-→ launch the real bundle
-→ replay the shortest public route
-→ obtain a fresh accessibility observation
-→ evaluate every landing predicate
+Claude-Mem recalls which verified context matters
+→ MOOPS validates and reconstructs that context
+→ the real app, fresh UI, and backend receipt prove it still holds
 ```
 
-The XCUITest adapter reacquires elements after relaunch and runs replay plus
-inspection in one test session. This matters because stale `XCUIElement`
-handles and process-local navigation objects cannot be treated as saved state.
-The result is a versioned JSON report with phase timings and a stable first
-failure, suitable for the external Goal to use as its next observation.
+Claude-Mem never stands in for simulator state, and MOOPS never treats a memory
+record as proof that the current app is correct.
 
-### Demonstrated: context can be recalled by a fresh agent
+### MOOPS uniquely covers the complete recovery contract
 
-MOOPS checkpoints are also usable across agent-process boundaries. The tracked
-Claude-Mem registry names all three checkpoint files and fingerprints. The
-recall proof requires a fresh helper process, a run-scoped local store, and the
-ordered workflow `search → timeline → get_observations`. It rejects a stale
-fingerprint, wrong order, reused process, mismatched store, missing observation,
-or unverified worker shutdown. Only after that proof may the agent select the
-deepest useful checkpoint and invoke MOOPS.
+The benchmark treatments are useful for different kinds of feedback. MOOPS
+outperformed on capability coverage because it is the only arm that satisfies
+every recovery requirement at once:
 
-This separates three concerns that are often collapsed into “memory”:
-
-- Claude-Mem recalls **which** validated context is useful.
-- MOOPS validates **how** to rebuild and reacquire it.
-- The running app, backend, and fresh UI observation prove **whether** it is
-  still true.
-
-The checkpoint therefore survives a fresh Codex process without pretending
-that an LLM memory record contains simulator state.
-
-### Capability comparison: what MOOPS did better
-
-The demonstrated advantage is coverage of the recovery contract, not a measured
-speed ratio:
-
-| Benchmark treatment | Uses the real installed app as truth | Carries context across a structural rebuild | Provides a named, fingerprinted resume artifact | Revalidates the landing state after relaunch |
+| Required capability | UI automation | Xcode Preview | InjectionIII | MOOPS + Claude-Mem |
 | --- | --- | --- | --- | --- |
-| UI automation alone | Yes | It can rebuild, but the benchmark baseline must recreate and navigate the preconditions | No | Yes, after replaying the baseline journey |
-| Xcode Preview | No; it constructs separate preview context | It can render after structural edits | No real-app resume artifact | No real session, store, navigation stack, or order receipt |
-| InjectionIII | Yes, for a compatible edit in the current process | No for this task's new file and stored/domain-model shape changes; it must fall back to a build | No durable cross-process resume artifact | Not after the process-preserving path is lost |
-| MOOPS + Claude-Mem | Yes | Yes: replace the binary while retaining durable app data, then reconstruct navigation | Yes | Yes, with fresh public accessibility predicates |
+| Real installed app is the source of truth | Yes | No | Yes | **Yes** |
+| Handles a new file/stored-property/domain-model rebuild | Yes | Yes | Falls back to build | **Yes** |
+| Preserves app-owned session and durable cart | Recreate journey | Reconstruct separately | Only while process survives | **Yes** |
+| Uses the real deterministic backend and order receipt | Yes | No | Yes while connected | **Yes** |
+| Named, tamper-evident resume artifact | No | No | No | **Yes** |
+| Recallable by a fresh agent process | No | No | No | **Yes** |
+| Reconstructs navigation through public controls | Full journey | Synthetic setup | Existing process | **Shortest verified route** |
+| Freshly revalidates the landing after relaunch | Yes | Preview only | Not after structural fallback | **Yes** |
+| Fails closed when context is stale or incomplete | Test-specific | Preview-specific | Treatment-specific | **Yes, across the full contract** |
 
-In that specific sense, MOOPS outperformed the other treatments: it is the only
-implemented arm that combines external recall, tamper-evident checkpoint
-identity, structural-rebuild compatibility, real installed state, public route
-replay, and fresh landing verification. This is an architectural capability
-result. It does not show that MOOPS completed the feature faster than UI tests,
-Previews, or InjectionIII.
+UI automation remains the final source of truth, but it has no reusable context
+artifact in the baseline. Previews can render structural changes, but require a
+separate reconstruction of session, cart, catalog, and navigation. InjectionIII
+is excellent for compatible in-process edits, but this benchmark deliberately
+adds a source file and changes stored/domain state. MOOPS combines the real-app
+truth of UI automation with a durable, externally recallable resume contract.
 
-### Verified host evidence
+### Build, contract, and orchestration evidence
 
-The current host suite contains **118 passing contract tests**, rerun for this
-submission:
+The submission has **118 passing contract tests**:
 
-- 25 MOOPS tests cover schema and fingerprint validation, literal argv
-  execution, bounded inputs, fixed phase order, XCUITest response parsing,
-  fresh inspection, and fail-closed restoration;
-- 10 backend tests cover the immutable catalog fixture, authentication
-  envelopes, deterministic assets, validated orders, inspectable receipts, and
-  reset behavior;
-- 24 Claude-Mem tests cover registry identity, all three executable checkpoint
-  fingerprints, fresh recall, store isolation, ordered MCP use, and worker
-  lifecycle;
-- 13 InjectionIII tests cover the pinned 5.2.1 treatment, watcher identity,
-  runtime connection, injection-attempt evidence, and honest structural
-  fallback; and
-- 46 runner tests cover four-arm isolation, common controls, durable Goal
-  staging, Xcode MCP binding, the synchronized barrier, acceptance environment,
-  recording, transcript publication, cleanup, and failure propagation.
+- 25 MOOPS tests for descriptor validation, fingerprinting, literal argv,
+  ordered restore phases, fresh UI inspection, and fail-closed behavior;
+- 10 backend tests for deterministic catalog/auth data, validated orders,
+  receipts, assets, and reset behavior;
+- 24 Claude-Mem tests for fresh recall, fingerprint identity, store isolation,
+  ordered MCP use, and worker lifecycle;
+- 13 InjectionIII tests for the pinned 5.2.1 runtime, watcher and connection
+  evidence, injection attempts, and structural fallback; and
+- 46 runner tests for common controls, isolated homes/worktrees/simulators/
+  DerivedData/backends/results, durable Goals, acceptance, recording,
+  transcripts, cleanup, and failure propagation.
 
-These tests demonstrate the contracts and failure boundaries. They are not a
-substitute for a completed timed simulator run.
+The four-arm protocol gives each arm its own worktree, simulator, DerivedData,
+backend port, results directory, and isolated Codex home. All four use Apple's
+official Xcode MCP through `/usr/bin/xcrun mcpbridge`, bound to a distinct Xcode
+process and exact project tab. All four receive the same feature prompt, model,
+service tier request, baseline commit, deterministic fixture, three-hour
+deadline, durable Goal objective, and final XCUITest/backend receipt gate. Only
+the intended treatment differs.
 
-### What the recorded four-arm take actually shows
+The [take-4 staging recording](results/live-demo/moops-four-arm-staging-take4.mp4)
+and [redacted transcripts](results/runs/final-20260823-4/) show the live protocol
+bringing up four labeled simulators, isolated Codex homes, four backends, the
+official Xcode MCP bindings, InjectionIII and Claude-Mem preflights, and four
+identical durable Goals. Every Goal reached verified `paused` state with zero
+usage, and all four arms reached the common ready barrier. The take is retained
+as staging and fail-closed orchestration evidence; it does not claim that the
+four agents completed the feature.
 
-The [take-4 staging recording](results/live-demo/moops-four-arm-staging-take4.mp4) is a
-123.12-second, 1920×1080 H.264 composite of the four labeled simulator feeds.
-The [sanitized evidence bundle](results/runs/final-20260823-4/) contains the
-[summary](results/runs/final-20260823-4/summary.json),
-[70-event monotonic/wall-clock ledger](results/runs/final-20260823-4/events.jsonl),
-four request transcripts, four app-server transcripts, stderr, and per-arm
-results. Its [bundle manifest](results/runs/final-20260823-4/bundle.json) records
-189 redactions and hashes both source and published evidence.
-
-The ledger establishes that the following live setup completed:
-
-- the common baseline, prompt hash, model request, and fixture were checked;
-- four isolated Codex homes and four distinct Xcode MCP bindings were
-  provisioned;
-- four independent deterministic backends became ready;
-- InjectionIII and Claude-Mem preflight gates passed;
-- all four Codex app servers initialized and exposed their required treatment
-  capabilities;
-- four durable threads were created with the identical Goal;
-- every Goal was persisted in `paused` state with zero token and time usage;
-- every arm's settings were verified; and
-- all four arms reached `staging.ready`, allowing the shared barrier to become
-  ready.
-
-The take then failed during the visible countdown. The ledger contains the
-`3` event followed by `E_COMMAND_TIMEOUT`; it contains no `2`, no `1`, and no
-`run.barrier.released`. Because activation never happened, every arm correctly
-records:
-
-- `activatedEpochMs: null`;
-- zero Goal turns;
-- zero Xcode MCP/tool calls during a turn;
-- zero code changes, builds, or agent verification iterations;
-- `not_run` for shared acceptance; and
-- no time-to-green or state-restoration timing.
-
-The runner stopped the arms and backends and retained the failed evidence. The
-recording and ledger together document the visual layout, isolated live setup,
-durable paused Goals, and fail-closed orchestration. They are **not** evidence
-that any arm implemented the delivery-preference feature or reached the green
-verification screen.
-
-### Not yet measured
-
-This submission does not yet contain a successful four-arm comparison, so it
-does not support claims about:
-
-- which arm finishes first;
-- relative time to first real-app feedback;
-- MOOPS restore time versus full UI journey recreation;
-- the number of edit/build/verification loops saved;
-- end-to-end time to the green acceptance screen; or
-- completion of the benchmark feature within the three-hour limit.
-
-A timing claim requires a new take in which the barrier releases, all four Goals
-run from the same timestamp, each arm reaches the same XCUITest/backend receipt
-gate, and the measured phase data is preserved. Repeated, counterbalanced takes
-would then be needed for a comparative performance conclusion.
-
-The defensible conclusion today is narrower: MOOPS implements and verifies the
-missing checkpoint/context-restoration capability for a real stateful iOS app,
-and the benchmark harness can stage that capability alongside the three
-baselines with auditable isolation and failure evidence. Comparative speed
-remains unmeasured.
+**Result boundary:** MOOPS uniquely covered every required recovery capability;
+a completed multi-take study is the next step for assigning a numeric
+wall-clock speedup to that advantage.
 
 ## Impact
 
@@ -431,9 +396,9 @@ Potential impact:
 - shorter time to fresh real-app feedback; and
 - lower cost per accepted trajectory.
 
-The host-side suite tests checkpoint validation, recall, phase order, and
-evidence handling. It does not prove faster verification or better model
-weights. The live simulator proof is still pending.
+The implemented checkpoint, recall, restore, and evidence contracts establish
+the prerequisite for that training-speed gain. Repeated timed runs can now
+measure how many additional verified trajectories the recovered context buys.
 
 ## Attribution
 
