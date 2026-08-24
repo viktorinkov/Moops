@@ -52,8 +52,171 @@ test("all arm policies share Xcode MCP while only B requires RenderPreview", () 
   const ids = ["codex-uitest", "codex-previews", "codex-injection", "codex-moops-claudemem"];
   const policies = ids.map(armPolicy);
   assert.equal(policies.every(({ instructions }) => instructions.includes("Apple Xcode MCP")), true);
+  assert.equal(policies.every(({ instructions }) => (
+    instructions.includes("$MOOPS_BENCHMARK_SIMULATOR_UDID")
+      && instructions.includes("$MOOPS_BENCHMARK_DERIVED_DATA")
+  )), true);
   assert.equal(policies[1].instructions.includes("RenderPreview"), true);
   assert.equal(new Set(policies.map(({ sha256 }) => sha256)).size, 4);
+});
+
+test("usage gate binds every shell xcodebuild build or test to its recorded simulator and DerivedData", () => {
+  const xcode = {
+    server: "xcode",
+    tool: "XcodeListWindows",
+    status: "completed",
+    argumentsText: "{}",
+    resultText: JSON.stringify({
+      content: [{
+        type: "text",
+        text: `tabIdentifier: ${expectedTab}\nworkspacePath: ${expectedWorkspace}`,
+      }],
+    }),
+  };
+  const binding = {
+    simulatorUdid: "D9321A22-663B-4A85-9147-2EA4C628A693",
+    derivedData: "/tmp/moops derived/codex-previews",
+  };
+  const command = (source) => ({
+    command: source,
+    status: "completed",
+    exitCode: 0,
+  });
+
+  assert.doesNotThrow(() => validateArmUsage(
+    "codex-uitest",
+    [xcode],
+    [command("/usr/bin/xcrun xcodebuild -project App.xcodeproj -scheme App -destination \"platform=iOS Simulator,id=$MOOPS_BENCHMARK_SIMULATOR_UDID\" -derivedDataPath \"$MOOPS_BENCHMARK_DERIVED_DATA\" test")],
+    [],
+    expectedWorkspace,
+    binding,
+  ));
+  assert.doesNotThrow(() => validateArmUsage(
+    "codex-uitest",
+    [xcode],
+    [command(`/usr/bin/xcrun xcodebuild -project App.xcodeproj -scheme App -destination 'id=${binding.simulatorUdid}' -derivedDataPath '${binding.derivedData}' build`)],
+    [],
+    expectedWorkspace,
+    binding,
+  ));
+  assert.doesNotThrow(() => validateArmUsage(
+    "codex-uitest",
+    [xcode],
+    [command(`"/usr/bin/xcodebuild" -project App.xcodeproj -scheme App -destination 'id=${binding.simulatorUdid}' -derivedDataPath '${binding.derivedData}' build`)],
+    [],
+    expectedWorkspace,
+    binding,
+  ));
+  assert.doesNotThrow(() => validateArmUsage(
+    "codex-uitest",
+    [xcode],
+    [command("/usr/bin/xcrun xcodebuild test-without-building -xctestrun \"$MOOPS_BENCHMARK_DERIVED_DATA/Build/Products/FoodDeliveryBenchmark.xctestrun\" -destination id=$MOOPS_BENCHMARK_SIMULATOR_UDID")],
+    [],
+    expectedWorkspace,
+    binding,
+  ));
+  assert.doesNotThrow(() => validateArmUsage(
+    "codex-uitest",
+    [xcode],
+    [command(`/usr/bin/xcrun xcodebuild test-without-building -xctestrun '${binding.derivedData}/Build/Products/FoodDeliveryBenchmark.xctestrun' -destination 'id=${binding.simulatorUdid}'`)],
+    [],
+    expectedWorkspace,
+    binding,
+  ));
+  assert.throws(
+    () => validateArmUsage(
+      "codex-uitest",
+      [xcode],
+      [command(`/usr/bin/xcrun xcodebuild test-without-building -xctestrun '${binding.derivedData}-foreign/Build/Products/FoodDeliveryBenchmark.xctestrun' -destination 'id=${binding.simulatorUdid}'`)],
+      [],
+      expectedWorkspace,
+      binding,
+    ),
+    (cause) => cause?.code === "E_XCODE_XCTESTRUN",
+  );
+  assert.throws(
+    () => validateArmUsage(
+      "codex-uitest",
+      [xcode],
+      [command("/bin/zsh -lc \"xcodebuild -project 'Food Delivery.xcodeproj' -scheme FoodDeliveryBenchmark -destination 'id=E97C5B55-8037-49D8-B441-E422759E3ED7' test\"")],
+      [],
+      expectedWorkspace,
+      binding,
+    ),
+    (cause) => cause?.code === "E_XCODE_DESTINATION",
+  );
+  assert.throws(
+    () => validateArmUsage(
+      "codex-uitest",
+      [xcode],
+      [command("'/usr/bin/xcodebuild' -project App.xcodeproj -scheme App -destination 'id=E97C5B55-8037-49D8-B441-E422759E3ED7' -derivedDataPath \"$MOOPS_BENCHMARK_DERIVED_DATA\" test")],
+      [],
+      expectedWorkspace,
+      binding,
+    ),
+    (cause) => cause?.code === "E_XCODE_DESTINATION",
+  );
+  assert.throws(
+    () => validateArmUsage(
+      "codex-uitest",
+      [xcode],
+      [command("xcodebuild -project App.xcodeproj -scheme App -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/codex-fooddelivery-derived build")],
+      [],
+      expectedWorkspace,
+      binding,
+    ),
+    (cause) => cause?.code === "E_XCODE_DESTINATION",
+  );
+  assert.throws(
+    () => validateArmUsage(
+      "codex-uitest",
+      [xcode],
+      [command(`xcodebuild -project App.xcodeproj -scheme App -destination 'id=${binding.simulatorUdid}' -derivedDataPath /tmp/wrong-derived test`)],
+      [],
+      expectedWorkspace,
+      binding,
+    ),
+    (cause) => cause?.code === "E_XCODE_DERIVED_DATA",
+  );
+  assert.throws(
+    () => validateArmUsage(
+      "codex-uitest",
+      [xcode],
+      [command(`xcodebuild -project App.xcodeproj -scheme App -destination 'id=${binding.simulatorUdid}' test`)],
+      [],
+      expectedWorkspace,
+      binding,
+    ),
+    (cause) => cause?.code === "E_XCODE_DERIVED_DATA",
+  );
+  const environmentBoundTest = "xcodebuild -project App.xcodeproj -scheme App -destination \"id=$MOOPS_BENCHMARK_SIMULATOR_UDID\" -derivedDataPath \"$MOOPS_BENCHMARK_DERIVED_DATA\" test";
+  for (const overriddenCommands of [
+    [command(`MOOPS_BENCHMARK_SIMULATOR_UDID=E97C5B55-8037-49D8-B441-E422759E3ED7 ${environmentBoundTest}`)],
+    [
+      command("export MOOPS_BENCHMARK_DERIVED_DATA=/tmp/foreign-derived-data"),
+      command(environmentBoundTest),
+    ],
+  ]) {
+    assert.throws(
+      () => validateArmUsage(
+        "codex-uitest",
+        [xcode],
+        overriddenCommands,
+        [],
+        expectedWorkspace,
+        binding,
+      ),
+      (cause) => cause?.code === "E_XCODE_BINDING_OVERRIDE",
+    );
+  }
+  assert.doesNotThrow(() => validateArmUsage(
+    "codex-uitest",
+    [xcode],
+    [command("ps -axo command | rg 'xcodebuild|xctest'")],
+    [],
+    expectedWorkspace,
+    binding,
+  ));
 });
 
 test("runtime inventory requires Xcode everywhere and Claude-Mem only in D", () => {

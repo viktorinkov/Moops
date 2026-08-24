@@ -1,9 +1,12 @@
 import { createHash } from "node:crypto";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 
 const COMMON = [
   "Use the Apple Xcode MCP exposed as server `xcode` by `/usr/bin/xcrun mcpbridge`.",
   "Your first Xcode MCP call must be XcodeListWindows. Use only the tab for the exact canonical workspace `$MOOPS_BENCHMARK_WORKTREE/benchmark/FoodDelivery/Food Delivery.xcodeproj`; ignore every other tab.",
   "The runner binds this arm's bridge to its dedicated Xcode process through MCP_XCODE_PID.",
+  "For every shell xcodebuild build or test, pass `-destination \"id=$MOOPS_BENCHMARK_SIMULATOR_UDID\"`; never use another destination.",
+  "Also pass `-derivedDataPath \"$MOOPS_BENCHMARK_DERIVED_DATA\"`, except test-without-building may instead use `-xctestrun \"$MOOPS_BENCHMARK_DERIVED_DATA/...xctestrun\"`; never use another DerivedData or xctestrun path.",
   "Complete at least one successful Xcode MCP call and keep the real app as the source of truth.",
 ];
 
@@ -141,6 +144,117 @@ function evidenceValues(source) {
   return { strings, tabIdentifiers: [...new Set(tabIdentifiers)] };
 }
 
+function xcodebuildSegments(command) {
+  if (typeof command !== "string") return [];
+  const starts = [...command.matchAll(
+    /(?<![A-Za-z0-9_.-])xcodebuild(?=["']?(?:\s|$))/g,
+  )].map(({ index }) => index);
+  return starts.map((start, index) => command.slice(start, starts[index + 1] ?? command.length))
+    .filter((segment) => (
+      /(?:^|\s)(?:build|test|build-for-testing|test-without-building)(?=\s|["';|&]|$)/
+        .test(segment)
+    ));
+}
+
+function optionValues(command, option) {
+  const pattern = new RegExp(
+    `(?:^|\\s)${option}(?:\\s+|=)(?:"([^"]*)"|'([^']*)'|([^\\s;&|]+))`,
+    "g",
+  );
+  return [...command.matchAll(pattern)].map((match) => ({
+    quote: match[1] !== undefined ? "double" : match[2] !== undefined ? "single" : null,
+    value: match[1] ?? match[2] ?? match[3],
+  }));
+}
+
+function normalizedShellValue(value) {
+  return value.replaceAll("\"", "").replaceAll("'", "").replaceAll("\\ ", " ").trim();
+}
+
+function isAllowedValue(candidate, expected, environmentName) {
+  const normalized = normalizedShellValue(candidate.value);
+  if (normalized === expected) return true;
+  if (candidate.quote === "single") return false;
+  return normalized === `$${environmentName}` || normalized === `\${${environmentName}}`;
+}
+
+function isAllowedArtifact(candidate, expectedRoot, environmentName) {
+  const normalized = normalizedShellValue(candidate.value);
+  if (candidate.quote !== "single") {
+    for (const prefix of [`$${environmentName}`, `\${${environmentName}}`]) {
+      if (normalized === prefix) return true;
+      if (normalized.startsWith(`${prefix}/`)) {
+        return !normalized.slice(prefix.length + 1).split("/").includes("..");
+      }
+    }
+  }
+  if (!isAbsolute(normalized)) return false;
+  const descendant = relative(resolve(expectedRoot), resolve(normalized));
+  return descendant === ""
+    || (descendant !== ".." && !descendant.startsWith(`..${sep}`) && !isAbsolute(descendant));
+}
+
+function validateXcodeCommandBindings(armId, commands, expectedBinding) {
+  const bindingAssignment = /\b(?:MOOPS_BENCHMARK_SIMULATOR_UDID|MOOPS_BENCHMARK_DERIVED_DATA)\b["']?\s*\+?=(?!=)/;
+  if (commands.some(({ command } = {}) => (
+    typeof command === "string" && bindingAssignment.test(command)
+  ))) {
+    fail("E_XCODE_BINDING_OVERRIDE", `${armId} reassigned a runner-owned Xcode binding`);
+  }
+  const segments = commands.flatMap(({ command } = {}) => xcodebuildSegments(command));
+  if (segments.length === 0) return { shellBuildOrTestCommands: 0 };
+  if (typeof expectedBinding?.simulatorUdid !== "string"
+    || expectedBinding.simulatorUdid === ""
+    || typeof expectedBinding?.derivedData !== "string"
+    || expectedBinding.derivedData === "") {
+    fail("E_XCODE_BINDING", `${armId} omitted its assigned simulator or DerivedData binding`);
+  }
+  for (const segment of segments) {
+    const destinations = optionValues(segment, "-destination");
+    const destinationMatches = destinations.length > 0 && destinations.every((candidate) => {
+      const identifier = normalizedShellValue(candidate.value).split(",")
+        .map((component) => component.trim())
+        .find((component) => component.startsWith("id="));
+      if (!identifier) return false;
+      return isAllowedValue(
+        { ...candidate, value: identifier.slice(3) },
+        expectedBinding.simulatorUdid,
+        "MOOPS_BENCHMARK_SIMULATOR_UDID",
+      );
+    });
+    if (!destinationMatches) {
+      fail("E_XCODE_DESTINATION", `${armId} xcodebuild did not target its assigned recorded simulator`);
+    }
+    const derivedDataPaths = optionValues(segment, "-derivedDataPath");
+    const derivedDataMatches = derivedDataPaths.every((candidate) => isAllowedValue(
+      candidate,
+      expectedBinding.derivedData,
+      "MOOPS_BENCHMARK_DERIVED_DATA",
+    ));
+    const testWithoutBuilding = /(?:^|\s)test-without-building(?=\s|["';|&]|$)/.test(segment);
+    if (testWithoutBuilding) {
+      const xctestrunPaths = optionValues(segment, "-xctestrun");
+      if (xctestrunPaths.length === 0 || !xctestrunPaths.every((candidate) => isAllowedArtifact(
+        candidate,
+        expectedBinding.derivedData,
+        "MOOPS_BENCHMARK_DERIVED_DATA",
+      ))) {
+        fail("E_XCODE_XCTESTRUN", `${armId} xcodebuild used an xctestrun outside its DerivedData`);
+      }
+      if (!derivedDataMatches) {
+        fail("E_XCODE_DERIVED_DATA", `${armId} xcodebuild did not use its isolated DerivedData`);
+      }
+    } else if (derivedDataPaths.length === 0 || !derivedDataMatches) {
+      fail("E_XCODE_DERIVED_DATA", `${armId} xcodebuild did not use its isolated DerivedData`);
+    }
+  }
+  return {
+    shellBuildOrTestCommands: segments.length,
+    simulatorUdid: expectedBinding.simulatorUdid,
+    derivedData: expectedBinding.derivedData,
+  };
+}
+
 function validateXcodeWorkspaceBinding(armId, xcodeCalls, expectedWorkspace) {
   if (typeof expectedWorkspace !== "string" || expectedWorkspace === "") {
     fail("E_XCODE_WORKSPACE", `${armId} omitted its expected canonical Xcode workspace`);
@@ -181,9 +295,15 @@ export function validateArmUsage(
   commands,
   memoryCheckpoints = [],
   expectedWorkspace,
+  expectedXcodeBinding,
 ) {
   const xcodeCalls = mcpCalls.filter(({ server }) => server === "xcode");
   const workspaceBinding = validateXcodeWorkspaceBinding(armId, xcodeCalls, expectedWorkspace);
+  const xcodeCommandBinding = validateXcodeCommandBindings(
+    armId,
+    commands,
+    expectedXcodeBinding,
+  );
   const successfulXcode = xcodeCalls.filter(({ status }) => (
     status === "completed"
   ));
@@ -204,6 +324,7 @@ export function validateArmUsage(
       xcodeCalls: successfulXcode.length,
       renderPreviewCalls: previewCalls.length,
       workspaceBinding,
+      xcodeCommandBinding,
     };
   }
   if (memoryCalls.length !== 0) {
@@ -268,5 +389,6 @@ export function validateArmUsage(
     selectedCheckpoint: "checkout-ready",
     recalledCheckpoints: memoryCheckpoints,
     workspaceBinding,
+    xcodeCommandBinding,
   };
 }

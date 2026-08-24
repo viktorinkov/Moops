@@ -12,6 +12,7 @@ import {
   parseClaudeMemWorkerEvidence,
   prepareClaudeMemArm,
   verifyClaudeMemArm,
+  verifyClaudeMemReady,
   wrapClaudeMemCommand,
 } from "./claude-mem.mjs";
 import { buildGoalObjective, runCodexGoal } from "./codex-goal.mjs";
@@ -273,6 +274,14 @@ async function runArm(manifest, arm, context) {
     gracefulShutdownMs: arm.id === CLAUDE_MEM_ARM_ID ? 15_000 : 500,
     forceShutdownMs: 2_000,
     waitForStart: async ({ threadId }) => {
+      if (arm.id === CLAUDE_MEM_ARM_ID) {
+        await context.verifyClaudeMemReady(context.claudeMemPreparation, {
+          arm,
+          codexHome: context.codexHome,
+          ledger: context.ledger,
+          resultDirectory: context.resultDirectory,
+        });
+      }
       context.states[arm.id] = "ready";
       await context.ledger.emit("arm.staging.ready", { armId: arm.id, threadId });
       return context.barrier.arrive();
@@ -624,6 +633,7 @@ export async function runBenchmark(manifest, options = {}) {
     injectionPreparation,
     codexHome: codexHomes[arm.id],
     verifyClaudeMem: options.verifyArmD ?? verifyClaudeMemArm,
+    verifyClaudeMemReady: options.verifyArmDReady ?? verifyClaudeMemReady,
     verifyInjectionIII: options.verifyArmC ?? verifyInjectionIIIArm,
     wrapClaudeMem: options.wrapArmD ?? wrapClaudeMemCommand,
     parseClaudeMemEvidence: options.parseArmDEvidence ?? parseClaudeMemWorkerEvidence,

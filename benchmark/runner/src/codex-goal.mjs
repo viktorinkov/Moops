@@ -614,6 +614,10 @@ export async function runCodexGoal(argv, options) {
         commands,
         options.memoryCheckpoints,
         options.expectedWorkspace,
+        {
+          simulatorUdid: options.env?.MOOPS_BENCHMARK_SIMULATOR_UDID,
+          derivedData: options.env?.MOOPS_BENCHMARK_DERIVED_DATA,
+        },
       );
     } catch (cause) {
       throw new CodexGoalError(cause.code ?? "E_ARM_USAGE", cause.message);

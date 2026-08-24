@@ -143,6 +143,25 @@ function fakeArmD(options = {}) {
       ],
     }),
     wrapArmD: (argv) => argv,
+    parseArmDEvidence: (message) => {
+      if (Object.hasOwn(message, "id") || Object.hasOwn(message, "method")) return undefined;
+      return {
+        kind: "claude-mem-worker-shutdown",
+        dataDirectory: message.dataDirectory,
+        pid: message.pid,
+        version: message.version,
+      };
+    },
+    verifyArmDReady: async (prepared) => {
+      options.onReady?.();
+      return {
+        kind: "claude-mem-worker-startup",
+        dataDirectory: prepared.dataDirectory,
+        pid: 45_678,
+        startToken: "fixture-start-token",
+        version: "13.15.3",
+      };
+    },
     verifyArmD: async (prepared, { command }) => {
       if (options.failPostflight) {
         const cause = new Error("fixture worker shutdown failure");

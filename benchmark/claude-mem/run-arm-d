@@ -40,6 +40,12 @@ STORE_MARKER="$CLAUDE_MEM_DATA_DIR/.moops-arm-d-store"
 export CLAUDE_MEM_DATA_DIR
 export CLAUDE_MEM_WORKER_HOST=127.0.0.1
 export CLAUDE_MEM_WORKER_PORT=37977
+if [ -n "${CODEX_HOME:-}" ]; then
+  CLAUDE_MEM_WORKER_SCRIPT_PATH="$CODEX_HOME/plugins/cache/claude-mem-local/claude-mem/13.15.3/scripts/worker-service.cjs"
+else
+  CLAUDE_MEM_WORKER_SCRIPT_PATH=
+fi
+export CLAUDE_MEM_WORKER_SCRIPT_PATH
 export CLAUDE_MEM_RUNTIME=worker
 export CLAUDE_MEM_QUEUE_ENGINE=sqlite
 export CLAUDE_MEM_MODEL=claude-haiku-4-5-20251001
@@ -69,7 +75,7 @@ export CLAUDE_MEM_CLOUD_SYNC_HUB_URL=
 export CLAUDE_MEM_TELEGRAM_ENABLED=false
 
 if [ "${1:-}" = "--print-environment" ]; then
-  node -e 'process.stdout.write(JSON.stringify({CLAUDE_CODE_PATH:process.env.CLAUDE_CODE_PATH,CLAUDE_MEM_CHROMA_ENABLED:process.env.CLAUDE_MEM_CHROMA_ENABLED,CLAUDE_MEM_CLAUDE_AUTH_METHOD:process.env.CLAUDE_MEM_CLAUDE_AUTH_METHOD,CLAUDE_MEM_CLOUD_SYNC_HUB_URL:process.env.CLAUDE_MEM_CLOUD_SYNC_HUB_URL,CLAUDE_MEM_CLOUD_SYNC_TOKEN:process.env.CLAUDE_MEM_CLOUD_SYNC_TOKEN,CLAUDE_MEM_CLOUD_SYNC_USER_ID:process.env.CLAUDE_MEM_CLOUD_SYNC_USER_ID,CLAUDE_MEM_CODEX_TRANSCRIPT_INGESTION:process.env.CLAUDE_MEM_CODEX_TRANSCRIPT_INGESTION,CLAUDE_MEM_DATA_DIR:process.env.CLAUDE_MEM_DATA_DIR,CLAUDE_MEM_EXCLUDED_PROJECTS:process.env.CLAUDE_MEM_EXCLUDED_PROJECTS,CLAUDE_MEM_MODEL:process.env.CLAUDE_MEM_MODEL,CLAUDE_MEM_MODE:process.env.CLAUDE_MEM_MODE,CLAUDE_MEM_PROVIDER:process.env.CLAUDE_MEM_PROVIDER,CLAUDE_MEM_QUEUE_ENGINE:process.env.CLAUDE_MEM_QUEUE_ENGINE,CLAUDE_MEM_RUNTIME:process.env.CLAUDE_MEM_RUNTIME,CLAUDE_MEM_SEMANTIC_INJECT:process.env.CLAUDE_MEM_SEMANTIC_INJECT,CLAUDE_MEM_SKIP_TOOLS:process.env.CLAUDE_MEM_SKIP_TOOLS,CLAUDE_MEM_TELEGRAM_ENABLED:process.env.CLAUDE_MEM_TELEGRAM_ENABLED,CLAUDE_MEM_TELEMETRY:process.env.CLAUDE_MEM_TELEMETRY,CLAUDE_MEM_TELEMETRY_ERRORS:process.env.CLAUDE_MEM_TELEMETRY_ERRORS,CLAUDE_MEM_TIER_ROUTING_ENABLED:process.env.CLAUDE_MEM_TIER_ROUTING_ENABLED,CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH:process.env.CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH,CLAUDE_MEM_TRANSCRIPTS_ENABLED:process.env.CLAUDE_MEM_TRANSCRIPTS_ENABLED,CLAUDE_MEM_WORKER_HOST:process.env.CLAUDE_MEM_WORKER_HOST,CLAUDE_MEM_WORKER_PORT:process.env.CLAUDE_MEM_WORKER_PORT,DO_NOT_TRACK:process.env.DO_NOT_TRACK})+"\n")'
+  node -e 'process.stdout.write(JSON.stringify({CLAUDE_CODE_PATH:process.env.CLAUDE_CODE_PATH,CLAUDE_MEM_CHROMA_ENABLED:process.env.CLAUDE_MEM_CHROMA_ENABLED,CLAUDE_MEM_CLAUDE_AUTH_METHOD:process.env.CLAUDE_MEM_CLAUDE_AUTH_METHOD,CLAUDE_MEM_CLOUD_SYNC_HUB_URL:process.env.CLAUDE_MEM_CLOUD_SYNC_HUB_URL,CLAUDE_MEM_CLOUD_SYNC_TOKEN:process.env.CLAUDE_MEM_CLOUD_SYNC_TOKEN,CLAUDE_MEM_CLOUD_SYNC_USER_ID:process.env.CLAUDE_MEM_CLOUD_SYNC_USER_ID,CLAUDE_MEM_CODEX_TRANSCRIPT_INGESTION:process.env.CLAUDE_MEM_CODEX_TRANSCRIPT_INGESTION,CLAUDE_MEM_DATA_DIR:process.env.CLAUDE_MEM_DATA_DIR,CLAUDE_MEM_EXCLUDED_PROJECTS:process.env.CLAUDE_MEM_EXCLUDED_PROJECTS,CLAUDE_MEM_MODEL:process.env.CLAUDE_MEM_MODEL,CLAUDE_MEM_MODE:process.env.CLAUDE_MEM_MODE,CLAUDE_MEM_PROVIDER:process.env.CLAUDE_MEM_PROVIDER,CLAUDE_MEM_QUEUE_ENGINE:process.env.CLAUDE_MEM_QUEUE_ENGINE,CLAUDE_MEM_RUNTIME:process.env.CLAUDE_MEM_RUNTIME,CLAUDE_MEM_SEMANTIC_INJECT:process.env.CLAUDE_MEM_SEMANTIC_INJECT,CLAUDE_MEM_SKIP_TOOLS:process.env.CLAUDE_MEM_SKIP_TOOLS,CLAUDE_MEM_TELEGRAM_ENABLED:process.env.CLAUDE_MEM_TELEGRAM_ENABLED,CLAUDE_MEM_TELEMETRY:process.env.CLAUDE_MEM_TELEMETRY,CLAUDE_MEM_TELEMETRY_ERRORS:process.env.CLAUDE_MEM_TELEMETRY_ERRORS,CLAUDE_MEM_TIER_ROUTING_ENABLED:process.env.CLAUDE_MEM_TIER_ROUTING_ENABLED,CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH:process.env.CLAUDE_MEM_TRANSCRIPTS_CONFIG_PATH,CLAUDE_MEM_TRANSCRIPTS_ENABLED:process.env.CLAUDE_MEM_TRANSCRIPTS_ENABLED,CLAUDE_MEM_WORKER_HOST:process.env.CLAUDE_MEM_WORKER_HOST,CLAUDE_MEM_WORKER_PORT:process.env.CLAUDE_MEM_WORKER_PORT,CLAUDE_MEM_WORKER_SCRIPT_PATH:process.env.CLAUDE_MEM_WORKER_SCRIPT_PATH,DO_NOT_TRACK:process.env.DO_NOT_TRACK})+"\n")'
   exit 0
 fi
 
@@ -127,9 +133,9 @@ fi
 
 node "$SCRIPT_DIR/registry.mjs" >/dev/null
 check_plugin
-check_worker_port_unused
 
 if [ "${1:-}" = "--doctor-fresh" ]; then
+  check_worker_port_unused
   STORE_PARENT=$(dirname -- "$CLAUDE_MEM_DATA_DIR")
   mkdir -p "$STORE_PARENT"
   if ! mkdir "$CLAUDE_MEM_DATA_DIR"; then
@@ -144,18 +150,55 @@ fi
 require_store
 
 if [ "${1:-}" = "--doctor" ]; then
+  check_worker_port_unused
   printf '%s\n' '{"claudeMemEnabled":true,"claudeMemVersion":"13.15.3","ok":true}'
   exit 0
 fi
+
+if [ -z "${CODEX_HOME:-}" ]; then
+  echo "run-arm-d: CODEX_HOME is required for the isolated Claude-Mem runtime" >&2
+  exit 2
+fi
+CLAUDE_PLUGIN_ROOT="$CODEX_HOME/plugins/cache/claude-mem-local/claude-mem/13.15.3"
+PLUGIN_ROOT=$CLAUDE_PLUGIN_ROOT
+export CLAUDE_PLUGIN_ROOT PLUGIN_ROOT
+if [ ! -f "$CLAUDE_MEM_WORKER_SCRIPT_PATH" ] \
+  || [ ! -f "$CLAUDE_PLUGIN_ROOT/scripts/mcp-server.cjs" ]; then
+  echo "run-arm-d: isolated Claude-Mem plugin bundle is incomplete: $CLAUDE_PLUGIN_ROOT" >&2
+  exit 1
+fi
+
+if [ "${1:-}" = "--verify-ready" ]; then
+  node "$SCRIPT_DIR/worker-lifecycle.mjs" --verify-ready
+  exit $?
+fi
+check_worker_port_unused
+
+STARTUP_RECEIPT="$CLAUDE_MEM_DATA_DIR/.moops-worker-startup.json"
+WORKER_PID_RECEIPT="$CLAUDE_MEM_DATA_DIR/worker.pid"
+if [ -e "$STARTUP_RECEIPT" ] || [ -L "$STARTUP_RECEIPT" ] \
+  || [ -e "$WORKER_PID_RECEIPT" ] || [ -L "$WORKER_PID_RECEIPT" ]; then
+  echo "run-arm-d: worker startup receipt already exists" >&2
+  exit 1
+fi
+
+cleanup_worker() {
+  STATUS=$?
+  trap - EXIT
+  if ! node "$SCRIPT_DIR/worker-lifecycle.mjs" --verify-and-shutdown; then
+    echo "run-arm-d: could not verify and stop this run's Claude-Mem worker" >&2
+    STATUS=1
+  fi
+  exit "$STATUS"
+}
+trap cleanup_worker EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 set +e
 codex "$@"
 CODEX_STATUS=$?
 set -e
-
-if ! node "$SCRIPT_DIR/worker-lifecycle.mjs" --verify-and-shutdown; then
-  echo "run-arm-d: could not verify and stop this run's Claude-Mem worker" >&2
-  exit 1
-fi
 
 exit "$CODEX_STATUS"

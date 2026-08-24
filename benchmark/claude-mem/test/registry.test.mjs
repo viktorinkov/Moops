@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, chmod, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -175,6 +175,7 @@ test("arm-D launcher forces local storage, no cloud sync, and no telemetry", asy
     CLAUDE_MEM_TIER_ROUTING_ENABLED: "false",
     CLAUDE_MEM_WORKER_HOST: "127.0.0.1",
     CLAUDE_MEM_WORKER_PORT: "37977",
+    CLAUDE_MEM_WORKER_SCRIPT_PATH: "",
     DO_NOT_TRACK: "1",
   });
 });
@@ -339,80 +340,35 @@ test("registry CLI usage documents both packet modes", () => {
   assert.match(result.stderr, /--packet NAME/);
 });
 
-test("worker lifecycle verifies the live store identity and graceful shutdown", async () => {
-  const { verifyWorkerIdentityAndShutdown } = await import("../worker-lifecycle.mjs");
-  const expectedDataDirectory = join(tmpdir(), "moops-worker-identity");
-  let shutdownRequested = false;
-  let workerRunning = true;
-  const fetchImplementation = async (url, options = {}) => {
-    const path = new URL(url).pathname;
-    if (!workerRunning) {
-      const error = new Error("connection refused");
-      error.code = "ECONNREFUSED";
-      throw error;
-    }
-    let body;
-    if (options.method === "POST" && path === "/api/admin/shutdown") {
-      shutdownRequested = true;
-      workerRunning = false;
-      body = { status: "shutting_down" };
-    } else if (path === "/api/health") {
-      body = { pid: 4242, version: "13.15.3" };
-    } else if (path === "/api/settings") {
-      body = {
-        CLAUDE_CODE_PATH: "",
-        CLAUDE_MEM_CLAUDE_AUTH_METHOD: "subscription",
-        CLAUDE_MEM_DATA_DIR: expectedDataDirectory,
-        CLAUDE_MEM_EXCLUDED_PROJECTS: "",
-        CLAUDE_MEM_MODEL: "claude-haiku-4-5-20251001",
-        CLAUDE_MEM_MODE: "code",
-        CLAUDE_MEM_PROVIDER: "claude",
-        CLAUDE_MEM_QUEUE_ENGINE: "sqlite",
-        CLAUDE_MEM_RUNTIME: "worker",
-        CLAUDE_MEM_SEMANTIC_INJECT: "false",
-        CLAUDE_MEM_SKIP_TOOLS: "ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion",
-        CLAUDE_MEM_TIER_ROUTING_ENABLED: "false",
-        CLAUDE_MEM_WORKER_HOST: "127.0.0.1",
-        CLAUDE_MEM_WORKER_PORT: "48123",
-      };
-    } else {
-      return { ok: false, status: 404, json: async () => ({}) };
-    }
-    return { ok: true, status: 200, json: async () => body };
-  };
-
-  const result = await verifyWorkerIdentityAndShutdown({
-    expectedDataDirectory,
-    fetchImplementation,
-    host: "127.0.0.1",
-    port: 48123,
-    shutdownTimeoutMs: 2_000,
-  });
-
-  assert.equal(shutdownRequested, true);
-  assert.deepEqual(result, {
-    dataDirectory: expectedDataDirectory,
+async function workerFixture(port = 48123) {
+  const root = await mkdtemp(join(tmpdir(), "moops-worker-lifecycle-"));
+  const dataDirectory = join(root, "store");
+  const workerScriptPath = join(root, "plugin/scripts/worker-service.cjs");
+  await mkdir(join(root, "plugin/scripts"), { recursive: true });
+  await mkdir(dataDirectory);
+  await writeFile(workerScriptPath, "// fixture worker\n");
+  await writeFile(join(dataDirectory, "worker.pid"), JSON.stringify({
     pid: 4242,
-    version: "13.15.3",
-  });
-});
+    port,
+    startedAt: "2026-08-23T20:00:00.000Z",
+    startToken: "fixture-start-token",
+  }));
 
-test("worker lifecycle refuses to stop a worker backed by a different store", async () => {
-  const { verifyWorkerIdentityAndShutdown } = await import("../worker-lifecycle.mjs");
-  let shutdownRequested = false;
-  const fetchImplementation = async (url, options = {}) => {
+  const fetchImplementation = async (url) => {
     const path = new URL(url).pathname;
-    let body;
-    if (options.method === "POST" && path === "/api/admin/shutdown") {
-      shutdownRequested = true;
-      body = { status: "shutting_down" };
-    } else if (path === "/api/health") {
-      body = { pid: 4343, version: "13.15.3" };
-    } else if (path === "/api/settings") {
-      body = {
+    const bodies = {
+      "/api/readiness": { status: "ready", mcpReady: true },
+      "/api/health": {
+        initialized: true,
+        mcpReady: true,
+        pid: 4242,
+        version: "13.15.3",
+        workerPath: workerScriptPath,
+      },
+      "/api/settings": {
         CLAUDE_CODE_PATH: "",
         CLAUDE_MEM_CLAUDE_AUTH_METHOD: "subscription",
-        CLAUDE_MEM_DATA_DIR: "/tmp/a-prior-run",
+        CLAUDE_MEM_DATA_DIR: dataDirectory,
         CLAUDE_MEM_EXCLUDED_PROJECTS: "",
         CLAUDE_MEM_MODEL: "claude-haiku-4-5-20251001",
         CLAUDE_MEM_MODE: "code",
@@ -423,82 +379,172 @@ test("worker lifecycle refuses to stop a worker backed by a different store", as
         CLAUDE_MEM_SKIP_TOOLS: "ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion",
         CLAUDE_MEM_TIER_ROUTING_ENABLED: "false",
         CLAUDE_MEM_WORKER_HOST: "127.0.0.1",
-        CLAUDE_MEM_WORKER_PORT: "48124",
+        CLAUDE_MEM_WORKER_PORT: String(port),
+      },
+    };
+    const body = bodies[path];
+    return {
+      ok: body !== undefined,
+      status: body === undefined ? 404 : 200,
+      json: async () => body ?? {},
+    };
+  };
+  return { dataDirectory, fetchImplementation, port, workerScriptPath };
+}
+
+test("worker readiness proves the exact MCP-started process and run-store receipt", async () => {
+  const { verifyWorkerReady } = await import("../worker-lifecycle.mjs");
+  const fixture = await workerFixture();
+  let readinessCalls = 0;
+  const fetchImplementation = async (url, options) => {
+    if (new URL(url).pathname === "/api/readiness" && readinessCalls++ === 0) {
+      return {
+        ok: false,
+        status: 503,
+        json: async () => ({ status: "initializing" }),
       };
-    } else {
-      return { ok: false, status: 404, json: async () => ({}) };
     }
-    return { ok: true, status: 200, json: async () => body };
+    return fixture.fetchImplementation(url, options);
   };
 
-  await assert.rejects(
-    () => verifyWorkerIdentityAndShutdown({
-      expectedDataDirectory: "/tmp/the-current-run",
-      fetchImplementation,
-      host: "127.0.0.1",
-      port: 48124,
-      shutdownTimeoutMs: 500,
-    }),
-    /CLAUDE_MEM_DATA_DIR.*current run/,
-  );
-  assert.equal(shutdownRequested, false);
+  const receipt = await verifyWorkerReady({
+    expectedDataDirectory: fixture.dataDirectory,
+    expectedWorkerScriptPath: fixture.workerScriptPath,
+    fetchImplementation,
+    port: fixture.port,
+    delayImplementation: async () => {},
+    processStartTokenImplementation: async () => "fixture-start-token",
+  });
+
+  assert.equal(readinessCalls, 2);
+  assert.equal(receipt.kind, "claude-mem-worker-startup");
+  assert.equal(receipt.pid, 4242);
+  assert.equal(receipt.startToken, "fixture-start-token");
+  assert.equal(receipt.workerPath, fixture.workerScriptPath);
+  assert.deepEqual(receipt.readiness, { status: "ready", mcpReady: true });
 });
 
-test("worker lifecycle does not mistake an unhealthy response for a stopped worker", async () => {
-  const { verifyWorkerIdentityAndShutdown } = await import("../worker-lifecycle.mjs");
-  const expectedDataDirectory = "/tmp/current-unhealthy-run";
-  let shutdownRequested = false;
-  const fetchImplementation = async (url, options = {}) => {
+test("worker shutdown re-proves the start token and directly closes the PID and port", async () => {
+  const { verifyWorkerIdentityAndShutdown, verifyWorkerReady } =
+    await import("../worker-lifecycle.mjs");
+  const fixture = await workerFixture(48124);
+  const startup = await verifyWorkerReady({
+    expectedDataDirectory: fixture.dataDirectory,
+    expectedWorkerScriptPath: fixture.workerScriptPath,
+    fetchImplementation: fixture.fetchImplementation,
+    port: fixture.port,
+    processStartTokenImplementation: async () => "fixture-start-token",
+  });
+  await writeFile(
+    join(fixture.dataDirectory, ".moops-worker-startup.json"),
+    JSON.stringify(startup),
+  );
+
+  let alive = true;
+  const signals = [];
+  const shutdown = await verifyWorkerIdentityAndShutdown({
+    expectedDataDirectory: fixture.dataDirectory,
+    expectedWorkerScriptPath: fixture.workerScriptPath,
+    fetchImplementation: fixture.fetchImplementation,
+    port: fixture.port,
+    processStartTokenImplementation: async () => "fixture-start-token",
+    processAliveImplementation: async () => alive,
+    portClosedImplementation: async () => !alive,
+    signalImplementation: (pid, signal) => {
+      signals.push([pid, signal]);
+      alive = false;
+    },
+  });
+
+  assert.deepEqual(signals, [[4242, "SIGTERM"]]);
+  assert.equal(shutdown.kind, "claude-mem-worker-shutdown");
+  assert.equal(shutdown.startToken, "fixture-start-token");
+  assert.equal(shutdown.pidClosed, true);
+  assert.equal(shutdown.portClosed, true);
+});
+
+test("staging cleanup closes an exactly proven worker after readiness fails", async () => {
+  const { verifyWorkerIdentityAndShutdown, verifyWorkerReady } =
+    await import("../worker-lifecycle.mjs");
+  const fixture = await workerFixture(48126);
+  const fetchImplementation = async (url, options) => {
     const path = new URL(url).pathname;
-    if (options.method === "POST" && path === "/api/admin/shutdown") {
-      shutdownRequested = true;
-      return { ok: true, status: 200, json: async () => ({ status: "shutting_down" }) };
-    }
-    if (path === "/api/health" && shutdownRequested) {
-      return { ok: false, status: 503, json: async () => ({ status: "degraded" }) };
+    if (path === "/api/readiness") {
+      return {
+        ok: false,
+        status: 503,
+        json: async () => ({ status: "initializing", mcpReady: false }),
+      };
     }
     if (path === "/api/health") {
       return {
         ok: true,
         status: 200,
-        json: async () => ({ pid: 4444, version: "13.15.3" }),
-      };
-    }
-    if (path === "/api/settings") {
-      return {
-        ok: true,
-        status: 200,
         json: async () => ({
-          CLAUDE_CODE_PATH: "",
-          CLAUDE_MEM_CLAUDE_AUTH_METHOD: "subscription",
-          CLAUDE_MEM_DATA_DIR: expectedDataDirectory,
-          CLAUDE_MEM_EXCLUDED_PROJECTS: "",
-          CLAUDE_MEM_MODEL: "claude-haiku-4-5-20251001",
-          CLAUDE_MEM_MODE: "code",
-          CLAUDE_MEM_PROVIDER: "claude",
-          CLAUDE_MEM_QUEUE_ENGINE: "sqlite",
-          CLAUDE_MEM_RUNTIME: "worker",
-          CLAUDE_MEM_SEMANTIC_INJECT: "false",
-          CLAUDE_MEM_SKIP_TOOLS: "ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion",
-          CLAUDE_MEM_TIER_ROUTING_ENABLED: "false",
-          CLAUDE_MEM_WORKER_HOST: "127.0.0.1",
-          CLAUDE_MEM_WORKER_PORT: "48125",
+          initialized: false,
+          mcpReady: false,
+          pid: 4242,
+          version: "13.15.3",
+          workerPath: fixture.workerScriptPath,
         }),
       };
     }
-    return { ok: false, status: 404, json: async () => ({}) };
+    return fixture.fetchImplementation(url, options);
   };
+  await assert.rejects(
+    () => verifyWorkerReady({
+      expectedDataDirectory: fixture.dataDirectory,
+      expectedWorkerScriptPath: fixture.workerScriptPath,
+      fetchImplementation,
+      port: fixture.port,
+      readinessTimeoutMs: 0,
+      processStartTokenImplementation: async () => "fixture-start-token",
+    }),
+    /readiness was not proven/,
+  );
 
+  let alive = true;
+  const signals = [];
+  const shutdown = await verifyWorkerIdentityAndShutdown({
+    expectedDataDirectory: fixture.dataDirectory,
+    expectedWorkerScriptPath: fixture.workerScriptPath,
+    fetchImplementation,
+    port: fixture.port,
+    processStartTokenImplementation: async () => "fixture-start-token",
+    processAliveImplementation: async () => alive,
+    portClosedImplementation: async () => !alive,
+    signalImplementation: (pid, signal) => {
+      signals.push([pid, signal]);
+      alive = false;
+    },
+  });
+
+  assert.deepEqual(signals, [[4242, "SIGTERM"]]);
+  assert.equal(shutdown.stagingCleanup, true);
+  assert.equal(shutdown.pidClosed, true);
+  assert.equal(shutdown.portClosed, true);
+});
+
+test("worker shutdown refuses a changed process start token before signaling", async () => {
+  const { verifyWorkerIdentityAndShutdown } = await import("../worker-lifecycle.mjs");
+  const fixture = await workerFixture(48125);
+  let tokenReads = 0;
+  let signaled = false;
   await assert.rejects(
     () => verifyWorkerIdentityAndShutdown({
-      expectedDataDirectory,
-      fetchImplementation,
-      host: "127.0.0.1",
-      port: 48125,
-      shutdownTimeoutMs: 150,
+      expectedDataDirectory: fixture.dataDirectory,
+      expectedWorkerScriptPath: fixture.workerScriptPath,
+      fetchImplementation: fixture.fetchImplementation,
+      port: fixture.port,
+      processStartTokenImplementation: async () => (
+        tokenReads++ === 0 ? "fixture-start-token" : "reused-pid-token"
+      ),
+      processAliveImplementation: async () => true,
+      signalImplementation: () => { signaled = true; },
     }),
-    /did not stop/,
+    /ownership changed before SIGTERM/,
   );
+  assert.equal(signaled, false);
 });
 
 test("arm-D launcher retains control until worker identity and shutdown are verified", async () => {
@@ -510,8 +556,13 @@ test("arm-D launcher retains control until worker identity and shutdown are veri
   const lifecycleInvocation = launcher.indexOf(
     'node "$SCRIPT_DIR/worker-lifecycle.mjs" --verify-and-shutdown',
   );
+  const exitTrap = launcher.indexOf("trap cleanup_worker EXIT");
 
   assert.ok(codexInvocation >= 0);
-  assert.ok(lifecycleInvocation > codexInvocation);
+  assert.ok(lifecycleInvocation >= 0);
+  assert.ok(exitTrap >= 0 && exitTrap < codexInvocation);
+  assert.match(launcher, /CLAUDE_MEM_WORKER_SCRIPT_PATH=.*13\.15\.3\/scripts\/worker-service\.cjs/);
+  assert.match(launcher, /worker-lifecycle\.mjs" --verify-ready/);
+  assert.doesNotMatch(launcher, /--start-and-verify/);
   assert.doesNotMatch(launcher, /^exec codex/m);
 });

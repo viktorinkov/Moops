@@ -1,12 +1,17 @@
 import { createHash } from "node:crypto";
-import { chmod, mkdir, readFile, stat, symlink, writeFile } from "node:fs/promises";
+import { chmod, lstat, mkdir, readFile, realpath, stat, symlink, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { homedir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 
 import { captureCommand } from "./process.mjs";
 
 const ARM_D = "codex-moops-claudemem";
 const CLAUDE_MEM_PLUGIN = "claude-mem@claude-mem-local";
+const CLAUDE_MEM_VERSION = "13.15.3";
+const CLAUDE_MEM_CACHE_PATH = `plugins/cache/claude-mem-local/claude-mem/${CLAUDE_MEM_VERSION}`;
+const CLAUDE_MEM_LOCK_SHA256 = "sha256:f2838926f106d16a128d3aeb3a3adc7ecc72e92dfd4f12fb3f1c9a9255ed11c6";
+const CLAUDE_MEM_ZOD_VERSION = "4.4.3";
 const TREATMENT_EXACT = new Set([
   "CLAUDE_CONFIG_DIR",
   "CLAUDE_PLUGIN_ROOT",
@@ -32,6 +37,133 @@ export class CodexHomeError extends Error {
 
 function fail(code, message) {
   throw new CodexHomeError(code, message);
+}
+
+async function runtimeMetadata(pluginRoot, context) {
+  let packageBody;
+  let lock;
+  try {
+    [packageBody, lock] = await Promise.all([
+      readFile(join(pluginRoot, "package.json"), "utf8"),
+      readFile(join(pluginRoot, "bun.lock")),
+    ]);
+  } catch (cause) {
+    fail("E_CODEX_HOME_CLAUDE_MEM_RUNTIME", `${context} metadata is unavailable: ${cause.message}`);
+  }
+  let packageJson;
+  try {
+    packageJson = JSON.parse(packageBody);
+  } catch (cause) {
+    fail("E_CODEX_HOME_CLAUDE_MEM_RUNTIME", `${context} package.json is invalid: ${cause.message}`);
+  }
+  if (packageJson.name !== "claude-mem-plugin" || packageJson.version !== CLAUDE_MEM_VERSION) {
+    fail(
+      "E_CODEX_HOME_CLAUDE_MEM_RUNTIME",
+      `${context} must be claude-mem-plugin ${CLAUDE_MEM_VERSION}`,
+    );
+  }
+  return {
+    lockSHA256: `sha256:${createHash("sha256").update(lock).digest("hex")}`,
+  };
+}
+
+async function validateDependencyRoot(pluginRoot, context) {
+  const nodeModules = join(pluginRoot, "node_modules");
+  let modulesMetadata;
+  try {
+    modulesMetadata = await lstat(nodeModules);
+  } catch (cause) {
+    fail("E_CODEX_HOME_CLAUDE_MEM_RUNTIME", `${context} node_modules is unavailable: ${cause.message}`);
+  }
+  if (!modulesMetadata.isDirectory() && !modulesMetadata.isSymbolicLink()) {
+    fail("E_CODEX_HOME_CLAUDE_MEM_RUNTIME", `${context} node_modules is not a directory binding`);
+  }
+  let modulesRealPath;
+  let zodV3Entry;
+  let zodPackage;
+  try {
+    modulesRealPath = await realpath(nodeModules);
+    const runtimeRequire = createRequire(join(pluginRoot, ".moops-runtime-probe.cjs"));
+    zodV3Entry = await realpath(runtimeRequire.resolve("zod/v3"));
+    zodPackage = JSON.parse(await readFile(join(modulesRealPath, "zod/package.json"), "utf8"));
+  } catch (cause) {
+    fail(
+      "E_CODEX_HOME_CLAUDE_MEM_RUNTIME",
+      `${context} cannot resolve the required zod/v3 runtime: ${cause.message}`,
+    );
+  }
+  if (!zodV3Entry.startsWith(`${modulesRealPath}${sep}`)
+    || zodPackage.name !== "zod"
+    || zodPackage.version !== CLAUDE_MEM_ZOD_VERSION) {
+    fail(
+      "E_CODEX_HOME_CLAUDE_MEM_RUNTIME",
+      `${context} did not resolve pinned zod/v3 ${CLAUDE_MEM_ZOD_VERSION}`,
+    );
+  }
+  return { nodeModules, modulesRealPath, zodV3Entry, zodVersion: zodPackage.version };
+}
+
+export async function bindClaudeMemRuntime({
+  sourcePluginRoot,
+  isolatedPluginRoot,
+  requiredLockSHA256 = CLAUDE_MEM_LOCK_SHA256,
+} = {}) {
+  if (typeof sourcePluginRoot !== "string"
+    || typeof isolatedPluginRoot !== "string"
+    || resolve(sourcePluginRoot) !== sourcePluginRoot
+    || resolve(isolatedPluginRoot) !== isolatedPluginRoot
+    || sourcePluginRoot === isolatedPluginRoot) {
+    fail(
+      "E_CODEX_HOME_CLAUDE_MEM_RUNTIME",
+      "distinct absolute source and isolated Claude-Mem plugin roots are required",
+    );
+  }
+  const [sourceMetadata, isolatedMetadata] = await Promise.all([
+    runtimeMetadata(sourcePluginRoot, "operator Claude-Mem runtime"),
+    runtimeMetadata(isolatedPluginRoot, "isolated Claude-Mem plugin"),
+  ]);
+  if (sourceMetadata.lockSHA256 !== isolatedMetadata.lockSHA256) {
+    fail(
+      "E_CODEX_HOME_CLAUDE_MEM_RUNTIME",
+      "operator and isolated Claude-Mem bun.lock fingerprints differ",
+    );
+  }
+  if (sourceMetadata.lockSHA256 !== requiredLockSHA256) {
+    fail(
+      "E_CODEX_HOME_CLAUDE_MEM_RUNTIME",
+      `Claude-Mem bun.lock must match the pinned ${CLAUDE_MEM_VERSION} fingerprint`,
+    );
+  }
+  const source = await validateDependencyRoot(sourcePluginRoot, "operator Claude-Mem runtime");
+  const isolatedNodeModules = join(isolatedPluginRoot, "node_modules");
+  let kind = "isolated-node-modules";
+  try {
+    await lstat(isolatedNodeModules);
+  } catch (cause) {
+    if (cause.code !== "ENOENT") {
+      fail("E_CODEX_HOME_CLAUDE_MEM_RUNTIME", `cannot inspect isolated node_modules: ${cause.message}`);
+    }
+    await symlink(source.modulesRealPath, isolatedNodeModules, "dir");
+    kind = "pinned-node-modules-symlink";
+  }
+  const isolated = await validateDependencyRoot(isolatedPluginRoot, "isolated Claude-Mem runtime");
+  if (isolated.modulesRealPath !== source.modulesRealPath && kind === "pinned-node-modules-symlink") {
+    fail("E_CODEX_HOME_CLAUDE_MEM_RUNTIME", "isolated dependency binding resolved unexpectedly");
+  }
+  if (isolated.zodVersion !== source.zodVersion) {
+    fail("E_CODEX_HOME_CLAUDE_MEM_RUNTIME", "isolated zod version differs from the pinned runtime");
+  }
+  return {
+    kind,
+    version: CLAUDE_MEM_VERSION,
+    lockSHA256: sourceMetadata.lockSHA256,
+    sourcePluginRoot,
+    sourceNodeModules: source.modulesRealPath,
+    isolatedPluginRoot,
+    isolatedNodeModules,
+    zodV3Entry: isolated.zodV3Entry,
+    zodVersion: isolated.zodVersion,
+  };
 }
 
 export function scrubTreatmentEnvironment(environment) {
@@ -94,6 +226,7 @@ function validateCLIInventory(armId, pluginList, mcpList) {
 
 export async function prepareCodexHomes(manifest, context, options = {}) {
   const capture = options.capture ?? captureCommand;
+  const bindRuntime = options.bindRuntime ?? bindClaudeMemRuntime;
   const sourceCodexHome = resolve(options.sourceCodexHome ?? join(homedir(), ".codex"));
   const sourceAuth = join(sourceCodexHome, "auth.json");
   const authMetadata = await stat(sourceAuth);
@@ -130,6 +263,7 @@ export async function prepareCodexHomes(manifest, context, options = {}) {
     await writeFile(configPath, commonConfig(arm.environment?.MCP_XCODE_PID), { flag: "wx", mode: 0o600 });
     await symlink(sourceAuth, join(home, "auth.json"));
     const environment = { ...cleanHost, CODEX_HOME: home };
+    let claudeMemRuntime = null;
 
     if (arm.id === ARM_D) {
       await successful(
@@ -144,6 +278,10 @@ export async function prepareCodexHomes(manifest, context, options = {}) {
         { cwd: arm.worktree, env: environment, timeoutMs: 60_000 },
         "arm D Claude-Mem provisioning",
       );
+      claudeMemRuntime = await bindRuntime({
+        sourcePluginRoot: join(sourceCodexHome, CLAUDE_MEM_CACHE_PATH),
+        isolatedPluginRoot: join(home, CLAUDE_MEM_CACHE_PATH),
+      });
       await chmod(configPath, 0o600);
     }
 
@@ -174,6 +312,7 @@ export async function prepareCodexHomes(manifest, context, options = {}) {
       },
       claudeMemEnabled: arm.id === ARM_D,
       claudeMemVersion: arm.id === ARM_D ? "13.15.3" : null,
+      claudeMemRuntime,
       cliInventory: {
         xcodeMCP: true,
         mcpSearch: /^mcp-search\s+/m.test(mcpResult.stdout),
