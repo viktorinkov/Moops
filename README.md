@@ -349,7 +349,7 @@ substitute for a completed timed simulator run.
 
 ### What the recorded four-arm take actually shows
 
-The [final four-arm recording](results/live-demo/moops-four-arm-live.mp4) is a
+The [take-4 staging recording](results/live-demo/moops-four-arm-staging-take4.mp4) is a
 123.12-second, 1920×1080 H.264 composite of the four labeled simulator feeds.
 The [sanitized evidence bundle](results/runs/final-20260823-4/) contains the
 [summary](results/runs/final-20260823-4/summary.json),
