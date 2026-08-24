@@ -1,5 +1,7 @@
 # MOOPS
 
+[![MOOPS cow wordmark on a black background](docs/assets/moops-hero.png)](docs/assets/moops-hero.png)
+
 I currently work as a research software engineer at the Snyder Lab at Stanford,
 where I develop the native Android and iOS apps for StudySync, a wearable health
 data collection platform.
